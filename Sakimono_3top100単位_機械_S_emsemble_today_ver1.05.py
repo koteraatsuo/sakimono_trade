@@ -216,6 +216,16 @@ ticker_symbols = list(tickers.keys())
 
 data = yf.download(ticker_symbols, period="10y", progress=False)["Close"].dropna()
 
+# 本日の日付を取得
+today = pd.Timestamp(datetime.now().date())
+
+# データの最後の日付が本日と一致する場合、その行を削除
+if data.index[-1].date() == today.date():
+    print("削除")
+    data = data.iloc[:-1]
+
+# 確認: 最後のデータが本日分ではなくなったことを確認
+print(data.tail())
 initial_investment = 100000
 leverage = 10
 stop_loss_threshold = 0.07
@@ -400,7 +410,7 @@ for current_date in unique_dates:
     print(f"Date: {current_date.date()}, Investment: {round(investment,2)}, Total Profit/Loss: {round(total_profit_loss,2)}, Total Fees: {total_fees}, Win Rate: {round(winrate,4)}")
 
 results_df = pd.DataFrame(simulation_results)
-simulation_file_name = f"simulation_results_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
+simulation_file_name = f"./分析/simulation_results_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
 results_df.to_excel(simulation_file_name, index=False)
 print(f"\nシミュレーション結果が '{simulation_file_name}' に保存されました。")
 
@@ -494,8 +504,8 @@ print("\n上位5件の購入推奨銘柄:")
 print(purchase_df_top5)
 
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-file_name_top3 = f"過去25日間_銘柄選定結果_top3_{timestamp}.xlsx"
-file_name_top5 = f"過去25日間_銘柄選定結果_top5_{timestamp}.xlsx"
+file_name_top3 = f"./分析/過去25日間_銘柄選定結果_top3_{timestamp}.xlsx"
+file_name_top5 = f"./分析/過去25日間_銘柄選定結果_top5_{timestamp}.xlsx"
 purchase_df_top3.to_excel(file_name_top3, index=False)
 purchase_df_top5.to_excel(file_name_top5, index=False)
 print("\n購入リストが以下のファイルに保存されました。")
@@ -521,7 +531,7 @@ print(f" - {file_name_top5}")
 #             mail = outlook.CreateItem(0)
 #             current_date = datetime.now().strftime("%Y-%m-%d")
 #             mail.To = recipient
-#             mail.Subject = f"購入リストのおすすめ結果 ({current_date})"
+#             mail.Subject = f"先物購入リストのおすすめ結果 ({current_date})"
 #             mail.Body = (
 #                 f"{recipient} 様\n\n"
 #                 "本日の購入リストのおすすめ結果をお送りします。\n\n"
