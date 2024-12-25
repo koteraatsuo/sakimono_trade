@@ -516,7 +516,11 @@ print(f" - {file_name_top5}")
 
 
 # メール送信コードは環境依存のためコメントアウトします
-if False:
+
+import os
+import win32com.client
+import time
+if True:
     recipient_list = [
         "k.atsuojp429@gmail.com",
         "k.atsuo-jp@outlook.com",
@@ -533,7 +537,7 @@ if False:
             mail = outlook.CreateItem(0)
             current_date = datetime.now().strftime("%Y-%m-%d")
             mail.To = recipient
-            mail.Subject = f"先物購入リストのおすすめ結果 ({current_date})"
+            mail.Subject = f"先物ショート　先物購入リストのおすすめ結果 ({current_date})"
             mail.Body = (
                 f"{recipient} 様\n\n"
                 "本日の購入リストのおすすめ結果をお送りします。\n\n"
@@ -547,3 +551,4 @@ if False:
             time.sleep(1)
     except Exception as e:
         print(f"An error occurred: {e}")
+

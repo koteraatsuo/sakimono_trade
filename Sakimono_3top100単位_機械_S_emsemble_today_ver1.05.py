@@ -520,34 +520,38 @@ print(f" - {file_name_top5}")
 
 
 # メール送信コードは環境依存のためコメントアウトします
-# if False:
-#     recipient_list = [
-#         "k.atsuojp429@gmail.com",
-#         "k.atsuo-jp@outlook.com",
-#         "kotera2hjp@gmail.com",
-#         "kotera2hjp@outlook.jp",
-#         "kotera2hjp@yahoo.co.jp"
-#     ]
-#     current_dir = os.getcwd()
-#     file_path_top3 = os.path.join(current_dir, file_name_top3)
-#     file_path_top5 = os.path.join(current_dir, file_name_top5)
-#     try:
-#         outlook = win32com.client.Dispatch("Outlook.Application")
-#         for recipient in recipient_list:
-#             mail = outlook.CreateItem(0)
-#             current_date = datetime.now().strftime("%Y-%m-%d")
-#             mail.To = recipient
-#             mail.Subject = f"先物購入リストのおすすめ結果 ({current_date})"
-#             mail.Body = (
-#                 f"{recipient} 様\n\n"
-#                 "本日の購入リストのおすすめ結果をお送りします。\n\n"
-#                 "添付ファイルをご確認ください。\n\n"
-#                 "よろしくお願いいたします。\n\n"
-#                 "チーム一同"
-#             )
-#             mail.Attachments.Add(file_path_top3)
-#             mail.Attachments.Add(file_path_top5)
-#             mail.Send()
-#             time.sleep(1)
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
+
+import os
+import win32com.client
+import time
+if True:
+    recipient_list = [
+        "k.atsuojp429@gmail.com",
+        "k.atsuo-jp@outlook.com",
+        "kotera2hjp@gmail.com",
+        "kotera2hjp@outlook.jp",
+        "kotera2hjp@yahoo.co.jp"
+    ]
+    current_dir = os.getcwd()
+    file_path_top3 = os.path.join(current_dir, file_name_top3)
+    file_path_top5 = os.path.join(current_dir, file_name_top5)
+    try:
+        outlook = win32com.client.Dispatch("Outlook.Application")
+        for recipient in recipient_list:
+            mail = outlook.CreateItem(0)
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            mail.To = recipient
+            mail.Subject = f"先物　先物購入リストのおすすめ結果 ({current_date})"
+            mail.Body = (
+                f"{recipient} 様\n\n"
+                "本日の購入リストのおすすめ結果をお送りします。\n\n"
+                "添付ファイルをご確認ください。\n\n"
+                "よろしくお願いいたします。\n\n"
+                "チーム一同"
+            )
+            mail.Attachments.Add(file_path_top3)
+            mail.Attachments.Add(file_path_top5)
+            mail.Send()
+            time.sleep(1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
