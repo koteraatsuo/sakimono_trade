@@ -13,6 +13,13 @@ import os
 import time
 #import sys  # 必要ならアンコメント
 
+# フォルダパスを指定
+folder_path = "./分析"
+
+# フォルダが存在しない場合は作成
+if not os.path.exists(folder_path):
+    os.makedirs(folder_path)
+
 # # ティッカーリスト（業種ごとに分類）
 # futures_tickers = {
 #     "Indices": [
