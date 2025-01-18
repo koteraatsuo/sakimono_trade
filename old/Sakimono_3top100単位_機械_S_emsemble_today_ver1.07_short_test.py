@@ -213,7 +213,8 @@ if not os.path.exists(folder_path):
 # print(f"\nスコアが閾値以上の業種に属するトップ株が保存されました: {top_stocks_path}")
 
 
-top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2.xlsx"
+# top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2.xlsx"
+top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2_20250111_152228.xlsx"
 # ここから機械学習モデル
 file_path = top_stocks_path
 
@@ -223,15 +224,30 @@ df = df[["業種", "銘柄コード", "企業名"]]
 tickers = {row["銘柄コード"]: row["企業名"] for _, row in df.iterrows()}
 ticker_symbols = list(tickers.keys())
 
-data = yf.download(ticker_symbols, period="10y", progress=False)["Close"].dropna()
-
+data = yf.download(ticker_symbols, period="5d", interval="5m")["Close"]# yf.download(tickers=ticker, period="1d", interval="1m")
+# データが空の場合の処理
+# 現在の日時を取得
+now = datetime.now()
+if data.empty:
+    print("データが取得できませんでした。すべてのティッカーが空です。")
+else:
+    # データが空でない場合にのみ処理を実行
+    if data.index[-1].date() == now.date() and now.time() >= datetime.strptime("07:00:00", "%H:%M:%S").time():
+        print("条件に合致するデータを削除します。")
+        data = data.iloc[:-1]
+print(data.tail(5))
 # 本日の日付を取得
 today = pd.Timestamp(datetime.now().date())
 
-# データの最後の日付が本日と一致する場合、その行を削除
-if data.index[-1].date() == today.date():
-    print("削除")
-    data = data.iloc[:-1]
+# 現在の日時を取得
+now = datetime.now()
+
+# # 今日の日付と午前7時以降の条件をチェックして行を削除
+# if data.index[-1].date() == now.date() and now.time() >= datetime.strptime("07:00:00", "%H:%M:%S").time():
+#     print("削除")
+#     data = data.iloc[:-1]
+
+# print("最後のデータ日付", data.index[-1].date())  
 
 # 確認: 最後のデータが本日分ではなくなったことを確認
 print(data.tail())
