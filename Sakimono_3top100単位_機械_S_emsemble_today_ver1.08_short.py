@@ -387,7 +387,7 @@ for top_n, purchase_recommendations in [(3, purchase_recommendations_top3), (5, 
         ticker_ = row["Ticker"]
         company_name = tickers.get(ticker_, "")
         # try:
-        df_temp = yf.download(ticker_, period="1d", interval="1h", progress=False)["Close"].dropna()
+        df_temp = yf.download(ticker_, period="5d", interval="1h", progress=False)["Close"].dropna()
 
         # データが空かどうかをチェック
         if df_temp.empty:
