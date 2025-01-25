@@ -475,6 +475,9 @@ try:
     current_dir = os.getcwd()
     file_path_top3 = os.path.join(current_dir, file_name_top3)
     file_path_top5 = os.path.join(current_dir, file_name_top5)
+    simulation_file = os.path.join(current_dir, simulation_file_name)
+    
+
     outlook = win32com.client.Dispatch("Outlook.Application")
     for recipient in recipient_list:
         mail = outlook.CreateItem(0)
@@ -490,8 +493,11 @@ try:
         )
         mail.Attachments.Add(file_path_top3)
         mail.Attachments.Add(file_path_top5)
+        mail.Attachments.Add(simulation_file)
+        
         mail.Send()
         time.sleep(1)
+
 
 except Exception as e:
     print(f"メール送信エラー: {e}")
