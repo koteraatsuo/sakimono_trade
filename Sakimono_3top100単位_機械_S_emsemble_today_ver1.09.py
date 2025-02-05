@@ -726,7 +726,8 @@ try:
         "k.atsuo-jp@outlook.com",
         "kotera2hjp@gmail.com",
         "kotera2hjp@outlook.jp",
-        "kotera2hjp@yahoo.co.jp"
+        "kotera2hjp@yahoo.co.jp",
+        "k.atsuofxtrade@gmail.com"
     ]
     current_dir = os.getcwd()
     file_path_top3 = os.path.join(current_dir, file_name_top3)
