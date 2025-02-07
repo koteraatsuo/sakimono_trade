@@ -761,3 +761,22 @@ try:
 
 except Exception as e:
     print(f"メール送信エラー: {e}")
+
+
+import win32com.client
+
+try:
+    outlook = win32com.client.Dispatch("Outlook.Application")
+    namespace = outlook.GetNamespace("MAPI")
+    
+    # "送信トレイ" フォルダを取得 (5 は「送信トレイ」のID)
+    outbox = namespace.GetDefaultFolder(5)
+    
+    # 送信トレイ内のすべてのメールを送信
+    for mail in outbox.Items:
+        mail.Send()
+
+    print("送信トレイ内のすべてのメールを送信しました。")
+
+except Exception as e:
+    print(f"送信エラー: {e}")
