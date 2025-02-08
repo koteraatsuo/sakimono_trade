@@ -759,8 +759,6 @@ file_paths = [
 # 日付取得
 current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
-# SMTP サーバーに接続
-from tabulate import tabulate
 
 try:
     server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
@@ -776,6 +774,13 @@ try:
     top5_stocks_html = ""
     if not purchase_df_top5.empty:
         top5_stocks_html = purchase_df_top5.to_html(index=False, justify="center", border=1)
+
+    # シミュレーション結果のテーブルを作成
+    simulation_results_html = ""
+    if not results_df.empty:
+        # 小数点以下1位に丸め、通常表記に変換
+        results_df = results_df.applymap(lambda x: f"{x:.1f}" if isinstance(x, (float, int)) else x)
+        simulation_results_html = results_df.to_html(index=False, justify="center", border=1, escape=False)
 
     for recipient in recipient_list:
         # メールの作成
@@ -822,6 +827,8 @@ try:
             {ticker_table_html}
             <h3>上位5件の推奨銘柄:</h3>
             {top5_stocks_html}
+            <h3>シミュレーション結果:</h3>
+            {simulation_results_html}
             <p>本リストは、新たに学習を行った結果に基づいて作成されました。</p>
             <p>詳細につきましては、添付ファイルをご確認ください。</p>
             <p>ご不明な点やご質問がございましたら、どうぞお気軽にお問い合わせください。</p>
