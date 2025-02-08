@@ -1,4 +1,3 @@
-
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -14,203 +13,16 @@ import os
 import time
 #import sys  # 必要ならアンコメント
 
-# ティッカーリスト（業種ごとに分類）
-futures_tickers = {
-    "Indices": [
-        "ES=F", "NQ=F", "YM=F", "RTY=F", "VIX=F", "DAX=F", "FTSE=F",
-        "NK=F", "HSI=F", "KOSPI=F", "S&P500", "NASDAQ100"
-    ],
-    "Commodities": [
-        "CL=F", "BZ=F", "NG=F", "HO=F", "RB=F",
-        "GC=F", "SI=F", "PL=F", "PA=F",
-        "HG=F", "ALI=F", "ZC=F", "ZW=F", "ZS=F",
-        "CC=F", "KC=F", "LB=F", "CT=F", "OJ=F"
-    ],
-    "Currencies": [
-        "6E=F", "6J=F", "6A=F", "6C=F", "6B=F", "6N=F", "6S=F",
-        "DX=F"
-    ],
-    "Interest Rates": [
-        "ZB=F", "ZN=F", "ZF=F", "ZT=F",
-        "GE=F", "ED=F"
-    ],
-    "Energy": [
-        "CL=F", "NG=F", "HO=F", "RB=F", "BZ=F",
-        "QL=F", "QA=F"
-    ],
-    "Metals": [
-        "GC=F", "SI=F", "PL=F", "PA=F", "HG=F"
-    ],
-    "Agriculture": [
-        "ZC=F", "ZW=F", "ZS=F", "ZM=F", "ZL=F",
-        "CC=F", "KC=F", "CT=F", "LB=F", "OJ=F"
-    ],
-    "Softs": [
-        "SB=F", "JO=F", "CC=F", "KC=F"
-    ],
-    "Global Indices": [
-        "NK=F", "HSI=F", "DAX=F", "FTSE=F", "CAC=F"
-    ]
-}
+# フォルダパスを指定
+folder_path = "./分析"
 
-# データ取得
-print("先物データ取得中...")
-futures_data = {}
-error_log = []
+# フォルダが存在しない場合は作成
+if not os.path.exists(folder_path):
+    os.makedirs(folder_path)
 
-for category, tickers_list in futures_tickers.items():
-    try:
-        data = yf.download(tickers_list, period="10y", group_by="ticker", progress=False)
-        if data is not None and not data.empty:
-            futures_data[category] = data
-        else:
-            print(f"{category}: データが取得できませんでした。")
-    except Exception as e:
-        error_log.append(f"{category}: {e}")
 
-# 1年間で20%以上成長の銘柄をフィルタ
-print("過去1年間の20%以上成長銘柄をフィルタリング中...")
-filtered_tickers = {}
-error_log = []
-
-for genre, tickers_list in futures_tickers.items():
-    filtered_genre_tickers = []
-    for ticker in tickers_list:
-        try:
-            data = yf.download(ticker, period="1y", progress=False)
-            if not data.empty and "Close" in data.columns:
-                close_prices = data['Close'].dropna()
-                if len(close_prices) > 1:
-                    first_price = close_prices.iloc[0]
-                    last_price = close_prices.iloc[-1]
-                    growth = (last_price / first_price) - 1
-                    if float(growth) >= 0.2:  # 20%以上成長
-                        filtered_genre_tickers.append(ticker)
-            else:
-                error_log.append(f"データが不足: {ticker}")
-        except Exception as e:
-            error_log.append(f"{ticker}: {e}")
-    print(genre, filtered_genre_tickers)
-    filtered_tickers[genre] = filtered_genre_tickers
-
-# フィルタリング結果を保存
-filtered_tickers_path = "filtered_tickers_with_names.xlsx"
-filtered_tickers_data = []
-
-for genre, tickers_list in filtered_tickers.items():
-    for ticker in tickers_list:
-        try:
-            ticker_obj = yf.Ticker(ticker)
-            info = ticker_obj.info
-            company_name = info.get("shortName", "不明") if info else "不明"
-            filtered_tickers_data.append({"業種": genre, "銘柄コード": ticker, "企業名": company_name})
-        except Exception as e:
-            error_log.append(f"{ticker}: 企業名取得エラー - {e}")
-
-df_filtered_tickers = pd.DataFrame(filtered_tickers_data)
-df_filtered_tickers.to_excel(filtered_tickers_path, index=False, sheet_name="Filtered Tickers")
-print(f"\nフィルタリング後のティッカーリストが保存されました: {filtered_tickers_path}")
-
-# フィルタリング済みのティッカーリストで2年分のデータ取得
-print("\nフィルタリング済みティッカーリストでデータを取得中...")
-full_data = {}
-for genre, tickers_list in filtered_tickers.items():
-    if tickers_list:
-        try:
-            data_downloaded = yf.download(tickers_list, period="2y", group_by="ticker", progress=False)
-            if data_downloaded is not None and not data_downloaded.empty:
-                full_data[genre] = data_downloaded
-            else:
-                print(f"{genre}: データが取得できませんでした。")
-        except Exception as e:
-            print(f"{genre}: データ取得中にエラーが発生しました - {e}")
-
-# 期間と重み
-periods = {
-    "1週間前": {"days": 5, "weight": 1.3},
-    "2週間前": {"days": 10, "weight": 1.15},
-    "1か月前": {"days": 21, "weight": 1.0},
-    "6週間前": {"days": 30, "weight": 0.9},
-    "9週間前": {"days": 45, "weight": 0.8},
-    "12週間前": {"days": 60, "weight": 0.7},
-}
-
-# スコア計算
-genre_scores = []
-for genre, data_genre in full_data.items():
-    total_score = 0
-    for period_name, period_info in periods.items():
-        returns = []
-        # ティッカー抽出
-        if isinstance(data_genre.columns, pd.MultiIndex):
-            tickers_in_genre = data_genre.columns.levels[0]
-        else:
-            # 単一ティッカーの場合の対応
-            tickers_in_genre = [genre] if isinstance(data_genre.columns, pd.Index) else []
-        for ticker in tickers_in_genre:
-            try:
-                close_prices = data_genre[ticker]['Close'].dropna()
-                if len(close_prices) >= period_info["days"]:
-                    recent_return = (close_prices.iloc[-1] / close_prices.iloc[-period_info["days"]] - 1)
-                    returns.append(recent_return)
-            except KeyError:
-                continue
-        if returns:
-            avg_return = sum(returns) / len(returns)
-            total_score += avg_return * period_info["weight"]
-    genre_scores.append({"業種": genre, "スコア": total_score})
-
-# スコア結果を保存
-scores_path = "genre_scores.xlsx"
-df_scores = pd.DataFrame(genre_scores)
-df_scores.to_excel(scores_path, index=False, sheet_name="Genre Scores")
-print(f"\n業種ごとのスコアが保存されました: {scores_path}")
-
-# スコアの閾値
-threshold = 0.2
-valid_genres = [genre for genre in genre_scores if genre["スコア"] >= threshold]
-if not valid_genres:
-    print("スコアが閾値以上の業種がありません。プログラムを終了します。")
-    # sys.exit() # 必要に応じて使用
-    exit()
-
-print("\nスコアが閾値以上の業種:")
-all_top_stocks = []
-for genre in valid_genres:
-    print(f"{genre['業種']}: スコア {genre['スコア']:.2f}")
-    selected_data = full_data.get(genre["業種"])
-    if selected_data is None or selected_data.empty:
-        continue
-    stock_performance = []
-    # filtered_tickers[genre["業種"]]を走査
-    for ticker in filtered_tickers[genre["業種"]]:
-        total_score = 0
-        try:
-            close_prices = selected_data[ticker]['Close'].dropna()
-            for period_name, period_info in periods.items():
-                if len(close_prices) >= period_info["days"]:
-                    recent_return = (close_prices.iloc[-1] / close_prices.iloc[-period_info["days"]] - 1)
-                    total_score += recent_return * period_info["weight"]
-            ticker_obj = yf.Ticker(ticker)
-            info = ticker_obj.info
-            company_name = info.get("shortName", "不明") if info else "不明"
-            stock_performance.append({"業種": genre["業種"], "銘柄コード": ticker, "企業名": company_name, "スコア": total_score})
-        except KeyError:
-            continue
-    top_stocks = sorted(stock_performance, key=lambda x: x["スコア"], reverse=True)[:5]
-    all_top_stocks.extend(top_stocks)
-
-# 上位銘柄結果をDataFrame化
-df_top_stocks = pd.DataFrame(all_top_stocks, columns=["業種", "銘柄コード", "企業名", "スコア"])
-
-# タイムスタンプを取得
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-# 新しいファイルパスを作成
-top_stocks_path = f"./分析/sakimono_top_stocks_全体用固定_0.2_0.2_{timestamp}.xlsx"
-df_top_stocks.to_excel(top_stocks_path, index=False, sheet_name="Top Stocks")
-print(f"\nスコアが閾値以上の業種に属するトップ株が保存されました: {top_stocks_path}")
-
+# top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2.xlsx"
+top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2_20250111_152228.xlsx"
 # ここから機械学習モデル
 file_path = top_stocks_path
 
@@ -426,8 +238,6 @@ results_df.to_excel(simulation_file_name, index=False)
 print(f"\nシミュレーション結果が '{simulation_file_name}' に保存されました。")
 
 
-
-
 # `results_df` が提供されたデータと仮定
 
 # Date列をdatetime型に変換
@@ -490,8 +300,6 @@ print(ticker_stats)
 ticker_winrates_output_file = f"./分析/ticker_winrates_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
 ticker_stats.to_excel(ticker_winrates_output_file, index=False)
 print(f"\nTickerごとの勝率が '{ticker_winrates_output_file}' に保存されました。")
-
-
 
 
 # 予測対象の銘柄と、その銘柄コード→企業名の辞書
@@ -713,35 +521,73 @@ purchase_df_top5.to_excel(file_name_top5, index=False)
 print(f"\n購入リストが保存されました:\n- {file_name_top3}\n- {file_name_top5}")
 
 
+time.sleep(3)
+import smtplib
 import os
-import win32com.client
 import time
+import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+# Gmail 設定
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+GMAIL_USER = "k.atsuofxtrade@gmail.com"
+GMAIL_PASSWORD = "yyyegokbvfcyufnm"
+
+# 送信先リスト
+recipient_list = [
+    "k.atsuojp429@gmail.com",
+    "k.atsuo-jp@outlook.com",
+    # "kotera2hjp@gmail.com",
+    # "kotera2hjp@outlook.jp",
+    # "kotera2hjp@yahoo.co.jp",
+    "k.atsuofxtrade@gmail.com"
+]
 
 
-# 必要に応じてメール送信などの処理をそのまま継承
-# -----------------------------
+# スクリプトのディレクトリを取得
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# ファイルパスをスクリプトのパスに基づいて定義
+file_path_top3 = os.path.join(script_dir, file_name_top3)
+file_path_top5 = os.path.join(script_dir, file_name_top5)
+
+
+simulation_file = os.path.join(script_dir, simulation_file_name)
+weekday_winrates_output_file_file = os.path.join(script_dir, weekday_winrates_output_file)
+ticker_winrates_output_file_file = os.path.join(script_dir, ticker_winrates_output_file)
+
+file_paths = [
+    file_path_top3,
+    file_path_top5,
+    simulation_file,
+    weekday_winrates_output_file_file,
+    ticker_winrates_output_file_file,
+]
+file_paths = [path.replace("\\", "/").replace("./", "") for path in file_paths]
+
+print(file_paths)
+
+# 日付取得
+current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+# SMTP サーバーに接続
 try:
-    recipient_list = [
-        "k.atsuojp429@gmail.com",
-        "k.atsuo-jp@outlook.com",
-        "kotera2hjp@gmail.com",
-        "kotera2hjp@outlook.jp",
-        "kotera2hjp@yahoo.co.jp",
-        "k.atsuofxtrade@gmail.com"
-    ]
-    current_dir = os.getcwd()
-    file_path_top3 = os.path.join(current_dir, file_name_top3)
-    file_path_top5 = os.path.join(current_dir, file_name_top5)
-    simulation_file = os.path.join(current_dir, simulation_file_name)
-    weekday_winrates_output_file_file = os.path.join(current_dir, weekday_winrates_output_file)
-    ticker_winrates_output_file_file = os.path.join(current_dir, ticker_winrates_output_file)
-    outlook = win32com.client.Dispatch("Outlook.Application")
+    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+    server.starttls()  # TLS 暗号化を開始
+    server.login(GMAIL_USER, GMAIL_PASSWORD)  # ログイン
+
     for recipient in recipient_list:
-        mail = outlook.CreateItem(0)
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        mail.To = recipient
-        mail.Subject = f"先物　先物購入リストのおすすめ結果 ({current_date})"
-        mail.Body = (
+        # メールの作成
+        msg = MIMEMultipart()
+        msg["From"] = GMAIL_USER
+        msg["To"] = recipient
+        msg["Subject"] = f"先物　新しく思考した先物購入リストのおすすめ結果 ({current_date})"
+        
+        body = (
             f"{recipient} 様\n\n"
             "本日の購入リストのおすすめ結果をお送りします。\n\n"
             "これは、新しくファイル学習させたものになります。\n\n"
@@ -749,35 +595,31 @@ try:
             "よろしくお願いいたします。\n\n"
             "チーム一同"
         )
-        mail.Attachments.Add(file_path_top3)
-        mail.Attachments.Add(file_path_top5)
-        mail.Attachments.Add(simulation_file)
-        mail.Attachments.Add(weekday_winrates_output_file_file)
-        mail.Attachments.Add(ticker_winrates_output_file_file)
-        
-        mail.Send()
-        time.sleep(1)
+        msg.attach(MIMEText(body, "plain"))
 
+        # 添付ファイルを追加
+        for file_path in file_paths:
+            if not os.path.exists(file_path):
+                print(f"ファイルが存在しません: {file_path}")
+            else:
+                print(f"ファイル確認済み: {file_path}, サイズ: {os.path.getsize(file_path) / 1024:.2f} KB")
+                with open(file_path, "rb") as attachment:
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(attachment.read())
+                    encoders.encode_base64(part)
+                    # ファイル名をASCII形式に変換
+                    safe_filename = os.path.basename(file_path).encode("ascii", "ignore").decode()
+                    part.add_header("Content-Disposition", f"attachment; filename={safe_filename}")
+                    msg.attach(part)
 
-except Exception as e:
-    print(f"メール送信エラー: {e}")
+        # メール送信
+        server.sendmail(GMAIL_USER, recipient, msg.as_string())
+        print(f"送信しました: {recipient}")
+        time.sleep(3)
 
-time.sleep(20)
-
-import win32com.client
-
-try:
-    outlook = win32com.client.Dispatch("Outlook.Application")
-    namespace = outlook.GetNamespace("MAPI")
-    
-    # "送信トレイ" フォルダを取得 (5 は「送信トレイ」のID)
-    outbox = namespace.GetDefaultFolder(5)
-    
-    # 送信トレイ内のすべてのメールを送信
-    for mail in outbox.Items:
-        mail.Send()
-
-    print("送信トレイ内のすべてのメールを送信しました。")
+    # サーバーを閉じる
+    server.quit()
+    print("すべてのメールを送信しました。")
 
 except Exception as e:
     print(f"送信エラー: {e}")
