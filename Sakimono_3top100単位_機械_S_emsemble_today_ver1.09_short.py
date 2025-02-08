@@ -570,6 +570,8 @@ try:
 except Exception as e:
     print(f"メール送信エラー: {e}")
 
+time.sleep(20)
+
 import win32com.client
 
 try:
