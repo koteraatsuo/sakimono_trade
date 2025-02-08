@@ -760,6 +760,8 @@ file_paths = [
 current_date = datetime.datetime.now().strftime("%Y-%m-%d")
 
 # SMTP サーバーに接続
+from tabulate import tabulate
+
 try:
     server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
     server.starttls()  # TLS 暗号化を開始
@@ -768,26 +770,67 @@ try:
     rato = investment / initial_investment
     profit = investment - initial_investment
 
+    # HTML形式の表を作成
+    weekday_table_html = weekday_stats.to_html(index=False, justify="center", border=1)
+    ticker_table_html = ticker_stats.to_html(index=False, justify="center", border=1)
+    top5_stocks_html = ""
+    if not purchase_df_top5.empty:
+        top5_stocks_html = purchase_df_top5.to_html(index=False, justify="center", border=1)
+
     for recipient in recipient_list:
         # メールの作成
-        msg = MIMEMultipart()
+        msg = MIMEMultipart("alternative")
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"先物　新しく思考した先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {rato:.2f}"
-        
-        body = (
-            f"{recipient} 様\n\n"
-            "平素よりお世話になっております。\n\n"
-            "本日の購入リストのおすすめ結果をお送りいたします。\n\n"
-            f"現在の投資額は {int(investment):,} 円で、初期投資額の {rato:.2f} 倍となっており、"
-            f"利益は {int(profit):,} 円です。\n\n"
-            "本リストは、新たに学習を行った結果に基づいて作成しております。\n\n"
-            "詳細につきましては、添付ファイルをご確認ください。\n\n"
-            "ご不明な点やご質問がございましたら、どうぞお気軽にお問い合わせください。\n\n"
-            "今後とも何卒よろしくお願い申し上げます。\n\n"
-            "チーム一同"
-        )
-        msg.attach(MIMEText(body, "plain"))
+        msg["Subject"] = f"先物　新しく思考した先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {rato:.2f}倍"
+
+        # HTML形式のメール本文を作成
+        body_html = f"""
+        <html>
+        <head>
+            <style>
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                }}
+                th, td {{
+                    border: 1px solid black;
+                    padding: 8px;
+                    text-align: center;
+                }}
+                th {{
+                    background-color: #f2f2f2;
+                }}
+            </style>
+        </head>
+        <body>
+            <p>{recipient} 様</p>
+            <p>平素よりお世話になっております。</p>
+            <p>本日の購入リストのおすすめ結果をお送りいたします。</p>
+            <p>
+                現在の投資額は {int(investment):,} 円で、初期投資額の {int(initial_investment):,} 円に対し、
+                {rato:.2f} 倍となっており、利益は {int(profit):,} 円です。
+            </p>
+            <p>
+                レバレッジ: {leverage} 倍<br>
+                取引期間: {deal_term} 営業日<br>
+                総合勝率: {winrate * 100:.2f} %
+            </p>
+            <h3>曜日ごとの勝率:</h3>
+            {weekday_table_html}
+            <h3>銘柄ごとの勝率:</h3>
+            {ticker_table_html}
+            <h3>上位5件の推奨銘柄:</h3>
+            {top5_stocks_html}
+            <p>本リストは、新たに学習を行った結果に基づいて作成されました。</p>
+            <p>詳細につきましては、添付ファイルをご確認ください。</p>
+            <p>ご不明な点やご質問がございましたら、どうぞお気軽にお問い合わせください。</p>
+            <p>今後とも何卒よろしくお願い申し上げます。</p>
+            <p>チーム一同</p>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(body_html, "html"))
 
         # 添付ファイルを追加
         for file_path in file_paths:
@@ -799,7 +842,6 @@ try:
                     part = MIMEBase("application", "octet-stream")
                     part.set_payload(attachment.read())
                     encoders.encode_base64(part)
-                    # ファイル名をASCII形式に変換
                     safe_filename = os.path.basename(file_path).encode("ascii", "ignore").decode()
                     part.add_header("Content-Disposition", f"attachment; filename={safe_filename}")
                     msg.attach(part)
