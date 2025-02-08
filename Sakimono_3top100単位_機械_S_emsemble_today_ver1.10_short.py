@@ -588,7 +588,7 @@ try:
         msg = MIMEMultipart()
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"先物　新しく思考した先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {rato:.2f}"
+        msg["Subject"] = f"先物　実績のある先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {rato:.2f}"
         
         body = (
             f"{recipient} 様\n\n"
