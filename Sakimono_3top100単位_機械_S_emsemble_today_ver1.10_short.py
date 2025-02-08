@@ -580,19 +580,26 @@ try:
     server.starttls()  # TLS 暗号化を開始
     server.login(GMAIL_USER, GMAIL_PASSWORD)  # ログイン
 
+    rato = investment / initial_investment
+    profit = investment - initial_investment
+
     for recipient in recipient_list:
         # メールの作成
         msg = MIMEMultipart()
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"先物　新しく思考した先物購入リストのおすすめ結果 ({current_date})"
+        msg["Subject"] = f"先物　新しく思考した先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {rato:.2f}"
         
         body = (
             f"{recipient} 様\n\n"
-            "本日の購入リストのおすすめ結果をお送りします。\n\n"
-            "これは、新しくファイル学習させたものになります。\n\n"
-            "添付ファイルをご確認ください。\n\n"
-            "よろしくお願いいたします。\n\n"
+            "平素よりお世話になっております。\n\n"
+            "本日の購入リストのおすすめ結果をお送りいたします。\n\n"
+            f"現在の投資額は {int(investment):,} 円で、初期投資額の {rato:.2f} 倍となっており、"
+            f"利益は {int(profit):,} 円です。\n\n"
+            "本リストは、新たに学習を行った結果に基づいて作成しております。\n\n"
+            "詳細につきましては、添付ファイルをご確認ください。\n\n"
+            "ご不明な点やご質問がございましたら、どうぞお気軽にお問い合わせください。\n\n"
+            "今後とも何卒よろしくお願い申し上げます。\n\n"
             "チーム一同"
         )
         msg.attach(MIMEText(body, "plain"))
