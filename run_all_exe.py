@@ -33,4 +33,5 @@ def exe():
 
     print("All scripts executed.")
 
+exe()
 
