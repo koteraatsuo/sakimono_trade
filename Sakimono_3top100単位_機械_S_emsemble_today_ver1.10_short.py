@@ -530,6 +530,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from email.mime.image import MIMEImage
+import matplotlib.pyplot as plt
+import mplfinance as mpf
 
 # Gmail 設定
 SMTP_SERVER = "smtp.gmail.com"
@@ -571,39 +574,162 @@ file_paths = [path.replace("\\", "/").replace("./", "") for path in file_paths]
 
 print(file_paths)
 
+import matplotlib.pyplot as plt
+
+def generate_advanced_chart(ticker, save_path, period="5d", interval="15m"):
+    """
+    高度なチャートを生成する関数
+      - ロウソク足チャート
+      - 移動平均線 (SMA, EMA)
+      - RSI (Relative Strength Index)
+    ※15分足など細かい足の場合は、取得期間（period）も短めに設定する必要があります。
+
+    Parameters
+    ----------
+    ticker : str
+        銘柄のティッカーシンボル (例: "AAPL" や "CC=F" など)
+    save_path : str
+        チャートを保存するパス
+    period : str
+        データ取得期間 (例: "5d", "1mo", "3mo", "1y")
+    interval : str
+        データ間隔 (例: "15m", "1d", "1h")
+    """
+    try:
+        # データ取得
+        df = yf.download(ticker, period=period, interval=interval)
+        if df.empty:
+            print(f"[WARNING] {ticker}: データが取得できませんでした。")
+            return None
+
+        # カラムが MultiIndex になっている場合はフラット化する
+        if isinstance(df.columns, pd.MultiIndex):  # MultiIndex の場合のみ適用
+            df.columns = df.columns.droplevel('Ticker')  # 'Ticker' の階層を削除
+
+        # print(df)
+
+        # 必須カラムのチェック
+        required_columns = ["Open", "High", "Low", "Close", "Volume"]
+        missing_cols = [col for col in required_columns if col not in df.columns]
+        if missing_cols:
+            print(f"[ERROR] {ticker}: missing columns: {missing_cols}")
+            return None
+
+        # 各カラムを数値型に変換
+        for col in required_columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        # NaN を含む行は削除
+        df.dropna(subset=required_columns, inplace=True)
+        if df.empty:
+            print(f"[WARNING] {ticker}: 数値データが存在しません。")
+            return None
+
+        # インディケーター計算
+        df["SMA_10"] = df["Close"].rolling(window=10, min_periods=1).mean()      # 10本移動平均
+        df["EMA_20"] = df["Close"].ewm(span=20, adjust=False).mean()               # 20本指数移動平均
+
+        delta = df["Close"].diff()
+        gain = delta.where(delta > 0, 0).rolling(window=14, min_periods=1).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14, min_periods=1).mean()
+        rs = gain / loss
+        df["RSI"] = 100 - (100 / (1 + rs))
+
+        # addplot に渡すデータは 1 次元のリストまたは Series である必要がある
+        sma10 = df["SMA_10"].tolist()
+        ema20 = df["EMA_20"].tolist()
+        rsi   = df["RSI"].tolist()
+
+        add_plots = [
+            mpf.make_addplot(sma10, color="blue", linestyle="--", width=1, label="SMA 10"),
+            mpf.make_addplot(ema20, color="red", linestyle="-", width=1, label="EMA 20"),
+            mpf.make_addplot(rsi,   panel=1, color="green", ylabel="RSI (14)")
+        ]
+
+        # チャート描画＆保存
+        mpf.plot(
+            df,
+            type="candle",
+            style="yahoo",
+            title=f"{ticker} Advanced Chart ({interval})",
+            ylabel="Price",
+            ylabel_lower="Volume",
+            volume=True,
+            addplot=add_plots,
+            figscale=1.2,  # サイズ調整
+            figratio=(12, 8),  # 横縦比
+            tight_layout=True,  # レイアウト自動調整
+            savefig=dict(fname=save_path, dpi=300, bbox_inches="tight", pad_inches=0.1),
+        )
+        print(f"[INFO] {ticker}: チャートを保存しました -> {save_path}")
+        return save_path
+
+    except Exception as e:
+        print(f"[ERROR] {ticker}: {e}")
+        return None
+
+def generate_charts_for_top_stocks(top_stocks, save_dir="./charts", period="5d", interval="15m"):
+    """
+    上位銘柄のチャートを生成し、ファイルパスをリストで返す関数
+
+    Parameters
+    ----------
+    top_stocks : list
+        銘柄のティッカーシンボルのリスト
+    save_dir : str
+        チャート画像を保存するディレクトリ
+    period : str
+        データ取得期間 (例: "5d", "1mo", "3mo", "1y")
+    interval : str
+        データ間隔 (例: "15m", "1d", "1h")
+    
+    Returns
+    -------
+    list
+        チャート画像ファイルのパスのリスト
+    """
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    chart_files = []
+    for ticker in top_stocks:
+        save_path = os.path.join(save_dir, f"{ticker}_advanced_chart.png")
+        chart_file = generate_advanced_chart(ticker, save_path, period=period, interval=interval)
+        if chart_file:
+            chart_files.append(chart_file)
+    return chart_files
+
 # 日付取得
 current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+chart_files = generate_charts_for_top_stocks(
+    purchase_df_top5["Ticker"].tolist(),
+    save_dir="./charts",
+    period="5d",    # ※15分足の場合、取得期間を短くすることが望ましい
+    interval="1h"
+)
 
 try:
     server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
     server.starttls()  # TLS 暗号化を開始
     server.login(GMAIL_USER, GMAIL_PASSWORD)  # ログイン
 
-    rato = investment / initial_investment
+    raito = investment / initial_investment
     profit = investment - initial_investment
 
     # HTML形式の表を作成
     weekday_table_html = weekday_stats.to_html(index=False, justify="center", border=1)
     ticker_table_html = ticker_stats.to_html(index=False, justify="center", border=1)
-    top5_stocks_html = ""
-    if not purchase_df_top5.empty:
-        top5_stocks_html = purchase_df_top5.to_html(index=False, justify="center", border=1)
-
-    # シミュレーション結果のテーブルを作成
-    simulation_results_html = ""
-    if not results_df.empty:
-        # 小数点以下1位に丸め、通常表記に変換
-        results_df = results_df.applymap(lambda x: f"{x:.1f}" if isinstance(x, (float, int)) else x)
-        simulation_results_html = results_df.to_html(index=False, justify="center", border=1, escape=False)
+    top5_stocks_html = purchase_df_top5.to_html(index=False, justify="center", border=1) if not purchase_df_top5.empty else ""
+    simulation_results_html = results_df.to_html(index=False, justify="center", border=1, escape=False) if not results_df.empty else ""
 
     for recipient in recipient_list:
         # メールの作成
-        msg = MIMEMultipart("alternative")
+        msg = MIMEMultipart("related")
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"先物　実績のある先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {rato:.2f}倍"
+        msg["Subject"] = f"先物 実績のある先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {raito:.2f}倍"
 
-        # HTML形式のメール本文を作成
+        # HTML本文を作成
         body_html = f"""
         <html>
         <head>
@@ -620,45 +746,62 @@ try:
                 th {{
                     background-color: #f2f2f2;
                 }}
+                img {{
+                    max-width: 100%;
+                    height: auto;
+                    float: left;
+                }}
             </style>
         </head>
         <body>
             <p>{recipient} 様</p>
             <p>平素よりお世話になっております。</p>
             <p>本日の購入リストのおすすめ結果をお送りいたします。</p>
-            <p>
-                現在の投資額は {int(investment):,} 円で、初期投資額の {int(initial_investment):,} 円に対し、
-                {rato:.2f} 倍となっており、利益は {int(profit):,} 円です。
-            </p>
-            <p>
-                レバレッジ: {leverage} 倍<br>
-                取引期間: {deal_term} 営業日<br>
-                総合勝率: {winrate * 100:.2f} %
-            </p>
-            <h3>曜日ごとの勝率:</h3>
-            {weekday_table_html}
-            <h3>銘柄ごとの勝率:</h3>
-            {ticker_table_html}
+            <p>現在の投資額: {int(investment):,} 円</p>
+            <p>初期投資額: {int(initial_investment):,} 円</p>
+            <p>レバレッジ: {leverage} 倍</p>
+            <p>取引期間: {deal_term} 営業日</p>
+            <p>総合勝率: {winrate * 100:.2f} %</p>
+
             <h3>上位5件の推奨銘柄:</h3>
             {top5_stocks_html}
+
+            <h3>曜日ごとの勝率:</h3>
+            {weekday_table_html}
+
+            <h3>銘柄ごとの勝率:</h3>
+            {ticker_table_html}
+
+            <h3>上位5社の株価チャート:</h3>
+        """
+
+        # 画像をHTMLに埋め込む
+        for i, img_path in enumerate(chart_files):
+            img_id = f"chart{i+1}"
+            body_html += f'<p><img src="cid:{img_id}" alt="Stock Chart {i+1}"></p>'
+
+        body_html += f"""
             <h3>シミュレーション結果:</h3>
             {simulation_results_html}
-            <p>本リストは、新たに学習を行った結果に基づいて作成されました。</p>
             <p>詳細につきましては、添付ファイルをご確認ください。</p>
-            <p>ご不明な点やご質問がございましたら、どうぞお気軽にお問い合わせください。</p>
-            <p>今後とも何卒よろしくお願い申し上げます。</p>
-            <p>チーム一同</p>
+            <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
         </body>
         </html>
         """
+
         msg.attach(MIMEText(body_html, "html"))
+
+        # 画像をメールに添付
+        for i, img_path in enumerate(chart_files):
+            with open(img_path, "rb") as img_file:
+                img = MIMEImage(img_file.read())
+                img.add_header("Content-ID", f"<chart{i+1}>")
+                img.add_header("Content-Disposition", "inline", filename=os.path.basename(img_path))
+                msg.attach(img)
 
         # 添付ファイルを追加
         for file_path in file_paths:
-            if not os.path.exists(file_path):
-                print(f"ファイルが存在しません: {file_path}")
-            else:
-                print(f"ファイル確認済み: {file_path}, サイズ: {os.path.getsize(file_path) / 1024:.2f} KB")
+            if os.path.exists(file_path):
                 with open(file_path, "rb") as attachment:
                     part = MIMEBase("application", "octet-stream")
                     part.set_payload(attachment.read())
