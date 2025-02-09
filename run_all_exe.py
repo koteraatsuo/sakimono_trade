@@ -3,7 +3,7 @@ import os
 
 def exe(): 
 # Anaconda 仮想環境名
-    conda_env = "py310"
+    conda_env = "py310_fx"
 
     # 実行するフォルダとスクリプトのリスト
     scripts_list = [
