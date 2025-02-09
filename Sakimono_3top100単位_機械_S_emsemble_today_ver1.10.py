@@ -913,7 +913,9 @@ try:
     weekday_table_html = weekday_stats.to_html(index=False, justify="center", border=1)
     ticker_table_html = ticker_stats.to_html(index=False, justify="center", border=1)
     top5_stocks_html = purchase_df_top5.to_html(index=False, justify="center", border=1) if not purchase_df_top5.empty else ""
-    simulation_results_html = results_df.to_html(index=False, justify="center", border=1, escape=False) if not results_df.empty else ""
+    results_df["Win Rate"] = (results_df["Win Rate"] * 100).round(2)
+    results_df = results_df.round(2)
+    simulation_results_html = results_df.to_html(index=False, justify="center", float_format="{:.2f}".format, border=1, escape=False) if not results_df.empty else ""
 
     for recipient in recipient_list:
         # メールの作成
