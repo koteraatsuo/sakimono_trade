@@ -8,6 +8,7 @@ def exe():
     # 実行するフォルダとスクリプトのリスト
     scripts_list = [
         ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.10_short.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.10_2_short.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.10.py"),
         ("C:/workspace/cfd_trade", "cfd_america_3top100単位_機械_S_emsemble_today_ver1.07_早く損切_結論_1.5_short.py"),
         ("C:/workspace/cfd_trade", "cfd_america_3top100単位_機械_S_emsemble_today_ver1.07_早く損切.py"),
