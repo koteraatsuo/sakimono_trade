@@ -7,7 +7,7 @@ import lightgbm as lgb
 from catboost import CatBoostClassifier
 import xgboost as xgb
 import joblib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as dtime
 import json
 import os
 import time
@@ -334,10 +334,39 @@ def get_daily_close_from_hourly(ticker, period="10y"):
 
     # 2. 「日足」へリサンプリングして終値を取得
     #    indexがDatetimeIndexになっている前提
+    print("="*50)
+    print("当日分まとめる前")
+    print(df_hourly.tail(25))
+    print("="*50)
     df_hourly = df_hourly.sort_index()  # 念のため時系列ソート
     df_daily = df_hourly['Close'].resample('D').last().dropna()
-
+    print("当日分まとめる後")
+    print(df_daily.tail(5))
+    print("="*50)
+    
     return df_daily
+
+from zoneinfo import ZoneInfo
+
+def get_market_threshold_time() -> time:
+    """
+    市場の取引開始時刻（閾値）を自動で返す関数です。
+    ここでは、例として米国東部時間のマーケットを想定し、
+    夏時間（DST）が適用されている場合は06:00、そうでなければ07:00を返します。
+    """
+    # 対象のマーケットの現地タイムゾーンを指定
+    market_tz = ZoneInfo("America/New_York")
+    now_market = datetime.now(market_tz)
+    
+    # DSTが適用されているかどうかで閾値を設定
+    if now_market.dst() != timedelta(0):
+        # 夏時間の場合
+        threshold = dtime(6, 0, 0)
+    else:
+        # 冬時間の場合
+        threshold = dtime(7, 0, 0)
+    
+    return threshold
 
 def create_features_for_today():
     """
@@ -355,20 +384,35 @@ def create_features_for_today():
         # データがない場合はスキップ
         if df_daily.empty:
             continue
-
-        print(df_daily.tail(5))
+        
+        print("当日分(未確定)削除前")
+        print("="*50)
+        print(df_daily.tail(3))
+   
 
         # 今日の日付と午前7時以降の条件をチェックして行を削除
         if len(df_daily) > 0:
             print("チャートデータ：", df_daily.index[-1].date())
             print("現在：", now.date())
             print("現在：", now.time() )
-            print("閾時間：", datetime.strptime("07:00:00", "%H:%M:%S").time())
-            if df_daily.index[-1].date() == now.date() and now.time() >= datetime.strptime("07:00:00", "%H:%M:%S").time():
+            print("閾時間：", get_market_threshold_time())
+            # 最新データの取引日を求めるため、7時間戻す
+            threshold = get_market_threshold_time()
+
+            # 現在時刻が07:00以降かつ、最新行の実際の取引日が今日の場合は、最後の行を除外する
+            if now.time() >= threshold and df_daily.index[-1].date() == now.date():
+                print("="*50)
+                print("="*50)
+                print("="*50)
                 print("  当日分(未確定)を削除")
                 df_daily = df_daily.iloc[:-1]
+                print("="*50)
+                print("="*50)
+                print("="*50)
 
-        print(df_daily.tail(5))
+        print("当日分(未確定)削除後")
+        print(df_daily.tail(3))
+        
         # 欠損除去
         df_daily = df_daily.dropna()
 
