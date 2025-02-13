@@ -772,7 +772,7 @@ try:
         msg = MIMEMultipart("related")
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"先物 実績のある先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {raito:.2f}倍"
+        msg["Subject"] = f"先物 実績のある先物購入リスト2_のおすすめ結果 ({current_date}) {int(investment)}円 {raito:.2f}倍"
 
         # HTML本文を作成
         body_html = f"""
