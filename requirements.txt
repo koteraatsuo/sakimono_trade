@@ -6,3 +6,4 @@ lightgbm
 catboost
 xgboost
 joblib
+mplfinance
