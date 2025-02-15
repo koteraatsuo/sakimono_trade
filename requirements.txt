@@ -9,3 +9,5 @@ joblib
 mplfinance
 openpyxl
 Metatrader5
+pyttsx3
+flask
