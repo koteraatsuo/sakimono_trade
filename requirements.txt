@@ -11,3 +11,4 @@ openpyxl
 Metatrader5
 pyttsx3
 flask
+schedule
