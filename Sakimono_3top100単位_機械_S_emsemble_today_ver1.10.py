@@ -239,7 +239,7 @@ print("最後のデータ日付", data.index[-1].date())
 print(data.tail())
 initial_investment = 100000
 leverage = 10
-stop_loss_threshold = 0.015
+stop_loss_threshold = 0.007
 price_threshold = 5000
 lookback_days = 30
 deal_term = 1
