@@ -23,8 +23,8 @@ if not os.path.exists(folder_path):
 
 # Excelファイルからティッカーリストを読み込み
 
-top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2_20250111_152228.xlsx"
-# top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2_20250213_230030.xlsx"
+# top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2_20250111_152228.xlsx"
+top_stocks_path = "sakimono_top_stocks_全体用固定_0.2_0.2_20250213_230030.xlsx"
 
 file_path = top_stocks_path
 df = pd.read_excel(file_path)
@@ -789,7 +789,7 @@ try:
         msg = MIMEMultipart("related")
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"先物 実績のある先物購入リストのおすすめ結果 ({current_date}) {int(investment)}円 {raito:.2f}倍"
+        msg["Subject"] = f"先物 実績のある先物購入リスト2_のおすすめ結果 ({current_date}) {int(investment)}円 {raito:.2f}倍"
 
         # HTML本文を作成
         body_html = f"""
