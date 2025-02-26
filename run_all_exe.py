@@ -10,7 +10,7 @@ def exe():
         # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11_short.py"),
         # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11_2_short.py"),
         # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11.py"),
-        ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_silver_open_short.11_short.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_silver_open_short.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_gold_open_short.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_cocoa_open_short.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_coffee_open_short.py"),
