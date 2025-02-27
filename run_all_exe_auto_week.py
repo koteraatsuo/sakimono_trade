@@ -86,8 +86,8 @@ def exe_cfd_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
     scripts_list = [
-        ("C:/workspace/cfd_trade", "cfd_america_3top100単位_機械_S_emsemble_today_ver1.07_早く損切_結論_1.5_short.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_3top100単位_機械_S_emsemble_today_ver1.07_早く損切.py")
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open.py")
     ]
 
     activate_command = f"conda activate {conda_env}"
@@ -152,7 +152,7 @@ schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("16:15").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
 schedule.every().day.at("19:00").do(lambda: schedule_job("cocoa_coffee"))
-schedule.every().day.at("07:30").do(lambda: schedule_job("cfd"))
+schedule.every().day.at("23:31").do(lambda: schedule_job("cfd"))
 # 土曜日は07:30にfxスクリプトを実行
 schedule.every().saturday.at("07:30").do(lambda: schedule_job("fx"))
 
