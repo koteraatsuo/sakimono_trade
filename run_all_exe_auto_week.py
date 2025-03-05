@@ -87,6 +87,8 @@ def exe_cfd_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
     scripts_list = [
+        
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_top8.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open.py")
