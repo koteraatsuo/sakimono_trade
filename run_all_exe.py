@@ -16,8 +16,9 @@ def exe():
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_coffee_open_short.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_top8.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open.py"),
-        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.05.py"),
-        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.05_short.py")
+        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_short.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_top30.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06.py")
     ]
 
     # Anaconda の activate コマンド
