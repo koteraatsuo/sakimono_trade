@@ -17,7 +17,7 @@ def exe():
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_top8.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_short.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_top30.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06.py")
