@@ -153,7 +153,7 @@ def schedule_job(script_type):
 # スケジュール設定
 # 平日（月～金）は07:30に「other」スクリプト、16:15に「japanese」スクリプトを実行
 schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
-schedule.every().day.at("16:15").do(lambda: schedule_job("japanese"))
+schedule.every().day.at("09:02").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
 schedule.every().day.at("19:00").do(lambda: schedule_job("cocoa_coffee"))
 schedule.every().day.at("23:31").do(lambda: schedule_job("cfd"))
