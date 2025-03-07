@@ -86,12 +86,21 @@ def exe_cocoa_coffee_scripts():
 def exe_cfd_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
+    # scripts_list = [
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_top8.py"),
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open.py"),
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
+    # ]
+
+
     scripts_list = [
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4_lev_2.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_top8.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4_lev_2.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
     ]
+
 
     activate_command = f"conda activate {conda_env}"
     for folder, script in scripts_list:
