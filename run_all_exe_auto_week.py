@@ -185,13 +185,13 @@ schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:02").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
 schedule.every().day.at("19:00").do(lambda: schedule_job("cocoa_coffee"))
-schedule.every().day.at("23:31").do(lambda: schedule_job("cfd"))
+schedule.every().day.at("22:31").do(lambda: schedule_job("cfd"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
 # 土曜日は07:30にfxスクリプトを実行
 schedule.every().saturday.at("07:30").do(lambda: schedule_job("fx"))
 
-print("スケジュール開始: 平日 07:30 と 16:15、土曜日 07:30 に実行")
+print("スケジュール開始: 平日 07:00 と  08:00 と 09:00 と 19:00 と 22:30、土曜日 07:30 に実行")
 
 # 無限ループでスケジュールを実行
 while True:
