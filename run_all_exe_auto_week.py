@@ -1,4 +1,4 @@
-﻿import subprocess
+import subprocess
 import os
 import schedule
 import time
@@ -185,7 +185,7 @@ schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:02").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
 schedule.every().day.at("19:00").do(lambda: schedule_job("cocoa_coffee"))
-schedule.every().day.at("22:31").do(lambda: schedule_job("cfd"))
+schedule.every().day.at("21:31").do(lambda: schedule_job("cfd"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
 # 土曜日は07:30にfxスクリプトを実行
