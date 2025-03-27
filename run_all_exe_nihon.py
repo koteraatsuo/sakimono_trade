@@ -1,4 +1,4 @@
-﻿import subprocess
+import subprocess
 import os
 
 def exe(): 
@@ -7,9 +7,9 @@ def exe():
 
     # 実行するフォルダとスクリプトのリスト
     scripts_list = [
-        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_short.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_top30.py"),
-        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06.py")
+        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_short.py"),
     ]
 
     # Anaconda の activate コマンド
