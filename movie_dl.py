@@ -33,3 +33,6 @@ if __name__ == '__main__':
         sys.exit(1)
     video_url = sys.argv[1]
     download_4k(video_url)
+
+
+    # conda install -c conda-forge ffmpeg
