@@ -83,6 +83,38 @@ def exe_cocoa_coffee_scripts():
         except Exception as e:
             print(f"Error running {script} in {folder}: {e}")
 
+
+
+def exe_before_cfd_scripts():
+    # 日本株以外のスクリプトを実行
+    conda_env = "py310_fx"
+    # scripts_list = [
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_top8.py"),
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open.py"),
+    #     ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
+    # ]
+
+
+    scripts_list = [
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.11_open_v4_before_train.py"),
+        # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
+        # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4_lev_2.py"),
+        # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
+    ]
+
+
+    activate_command = f"conda activate {conda_env}"
+    for folder, script in scripts_list:
+        try:
+            os.chdir(folder)
+            print(f"Running {script} in {folder}...")
+            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
+            print(f"Finished running {script}.")
+        except Exception as e:
+            print(f"Error running {script} in {folder}: {e}")
+
+
 def exe_cfd_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
@@ -95,10 +127,10 @@ def exe_cfd_scripts():
 
 
     scripts_list = [
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4_lev_2.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4_lev_2.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
+        # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4_lev_2.py"),
+        # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.11_open_v4_lev_2.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.11_open_v4.py")
     ]
 
 
@@ -162,6 +194,10 @@ def schedule_job(script_type):
         if today <= 5:  # 月～土
             print("Starting other scripts at 07:30...")
             exe_cfd_scripts()
+    elif script_type == "before_cfd":
+        if today <= 5:  # 月～土
+            print("Starting other scripts at 07:30...")
+            exe_before_cfd_scripts()
     elif script_type == "sakimono":
         if today <= 5:  # 月～土
             print("Starting other scripts at 07:10...")
@@ -186,7 +222,8 @@ schedule.every().day.at("06:00").do(lambda: schedule_job("japanese_before"))
 schedule.every().day.at("09:01").do(lambda: schedule_job("japanese"))
 # schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
 # schedule.every().day.at("19:00").do(lambda: schedule_job("cocoa_coffee"))
-# schedule.every().day.at("22:31").do(lambda: schedule_job("cfd"))
+schedule.every().day.at("21:30").do(lambda: schedule_job("before_cfd"))
+schedule.every().day.at("22:31").do(lambda: schedule_job("cfd"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
 # 土曜日は07:30にfxスクリプトを実行
