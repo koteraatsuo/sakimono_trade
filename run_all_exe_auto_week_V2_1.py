@@ -98,6 +98,7 @@ def exe_before_cfd_scripts():
 
 
     scripts_list = [
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.12_open_v4_before_train.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.11_open_v4_before_train.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4_lev_2.py"),
@@ -129,7 +130,7 @@ def exe_cfd_scripts():
 
     scripts_list = [
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4_lev_2.py"),
-        # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.12_open_v4_before_train.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.11_open_v4_lev_2.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.11_open_v4.py")
     ]
