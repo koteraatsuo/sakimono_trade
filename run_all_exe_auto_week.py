@@ -49,7 +49,7 @@ def exe_metal_scripts():
     conda_env = "py310_fx"
     scripts_list = [
         # ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_silver_open_short.11_short.py"),
-        ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_gold_open_short.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_Metals.py"),
         # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11.py"),
     ]
 
@@ -68,8 +68,8 @@ def exe_cocoa_coffee_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
     scripts_list = [
-        ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_cocoa_open_short.py"),
-        ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_coffee_open_short.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_Indices.py"),
+        # ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_coffee_open_short.py"),
         # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11.py"),
     ]
 
@@ -170,7 +170,7 @@ def schedule_job(script_type):
         if today <= 5:  # 月～土
             print("Starting other scripts at 08:02...")
             exe_metal_scripts()
-    elif script_type == "cocoa_coffee":
+    elif script_type == "Indices":
         if today <= 5:  # 月～土
             print("Starting other scripts at 08:02...")
             exe_cocoa_coffee_scripts()
@@ -184,7 +184,7 @@ def schedule_job(script_type):
 schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:02").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
-schedule.every().day.at("19:00").do(lambda: schedule_job("cocoa_coffee"))
+schedule.every().day.at("22:50").do(lambda: schedule_job("Indices"))
 schedule.every().day.at("22:31").do(lambda: schedule_job("cfd"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
