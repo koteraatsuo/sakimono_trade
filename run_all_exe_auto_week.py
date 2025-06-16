@@ -50,7 +50,7 @@ def exe_metal_scripts():
     scripts_list = [
         # ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_silver_open_short.11_short.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_Metals.py"),
-        # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_gold.py"),
     ]
 
     activate_command = f"conda activate {conda_env}"
@@ -69,7 +69,7 @@ def exe_cocoa_coffee_scripts():
     conda_env = "py310_fx"
     scripts_list = [
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_Indices.py"),
-        # ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_coffee_open_short.py"),
+        ("C:/workspace/sakimono_trade", "CFD_indice_ver1.13_Fernandes_lev2.py"),
         # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11.py"),
     ]
 
