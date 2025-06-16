@@ -166,6 +166,28 @@ def exe_fx_scripts():
             print(f"Error running {script} in {folder}: {e}")
 
 
+
+def exe_fx_scripts():
+    # fxスクリプトを実行（今回は土曜日に実行）
+    conda_env = "py310_fx"
+    scripts_list = [
+        # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
+        # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
+        ("C:/workspace/fx_trade_3", "FX_straight_yen_ver1.12_Fernandes_lev2.py"),
+    ]
+
+    activate_command = f"conda activate {conda_env}"
+    for folder, script in scripts_list:
+        try:
+            os.chdir(folder)
+            print(f"Running {script} in {folder}...")
+            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
+            print(f"Finished running {script}.")
+        except Exception as e:
+            print(f"Error running {script} in {folder}: {e}")
+
+
+
 def exe_update_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
@@ -213,14 +235,16 @@ def schedule_job(script_type):
             print("Starting other scripts at 08:02...")
             exe_cocoa_coffee_scripts()
     elif script_type == "fx":
-        if today == 5:  # 土曜日
+        if today < 5:  # 土曜日
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
 
 # スケジュール設定
 # 平日（月～金）は07:30に「other」スクリプト、16:15に「japanese」スクリプトを実行
 # schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
+
 schedule.every().day.at("06:00").do(lambda: schedule_job("japanese_before"))
+schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:01").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
 schedule.every().day.at("22:30").do(lambda: schedule_job("cocoa_coffee"))
