@@ -186,6 +186,24 @@ def exe_fx_scripts():
         except Exception as e:
             print(f"Error running {script} in {folder}: {e}")
 
+def exe_metal_scripts():
+    # 日本株以外のスクリプトを実行
+    conda_env = "py310_fx"
+    scripts_list = [
+        # ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_silver_open_short.11_short.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_Metals.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_gold.py"),
+    ]
+
+    activate_command = f"conda activate {conda_env}"
+    for folder, script in scripts_list:
+        try:
+            os.chdir(folder)
+            print(f"Running {script} in {folder}...")
+            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
+            print(f"Finished running {script}.")
+        except Exception as e:
+            print(f"Error running {script} in {folder}: {e}")
 
 
 def exe_update_scripts():
@@ -238,6 +256,10 @@ def schedule_job(script_type):
         if today < 5:  # 土曜日
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
+    elif script_type == "metal":
+        if today <= 5:  # 月～土
+            print("Starting other scripts at 08:02...")
+            exe_metal_scripts()
 
 # スケジュール設定
 # 平日（月～金）は07:30に「other」スクリプト、16:15に「japanese」スクリプトを実行
