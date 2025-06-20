@@ -9,6 +9,7 @@ def exe_japanese_stocks():
     conda_env = "py310_fx"
     scripts_list = [
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.07_top30_load_sim_Fernandes.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.08_top30_load_sim_Fernandes.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.07_load_sim.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.07_top30_load_sim.py"),
         # ("C:/workspace/nihon_kabu_trade", "nnihon_3top100単位_機械_S_emsemble_today_ver1.07_top30_load_sim_Fernandes.py"),
@@ -50,6 +51,7 @@ def exe_japanese_before_scripts():
     conda_env = "py310_fx"
     scripts_list = [
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.07_top30_before_train_Fernandes.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.08_top30_before_train_Fernandes.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_top30.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_short.py"),
     ]
@@ -265,7 +267,7 @@ def schedule_job(script_type):
 # 平日（月～金）は07:30に「other」スクリプト、16:15に「japanese」スクリプトを実行
 # schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 
-schedule.every().day.at("06:00").do(lambda: schedule_job("japanese_before"))
+schedule.every().day.at("05:00").do(lambda: schedule_job("japanese_before"))
 schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:01").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
