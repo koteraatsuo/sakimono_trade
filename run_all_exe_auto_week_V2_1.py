@@ -10,7 +10,7 @@ def exe_japanese_stocks():
     scripts_list = [
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.07_top30_load_sim_Fernandes.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.08_top30_load_sim_Fernandes.py"),
-        ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.07_load_sim.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.07_top30_load_sim.py"),
         # ("C:/workspace/nihon_kabu_trade", "nnihon_3top100単位_機械_S_emsemble_today_ver1.07_top30_load_sim_Fernandes.py"),
     ]
@@ -101,7 +101,7 @@ def exe_before_cfd_scripts():
 
     scripts_list = [
         ("C:/workspace/cfd_trade", "cfd_america_ver1.12_open_v4_before_train.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.11_open_v4_before_train.py"),
+        ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4_lev_2.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
@@ -133,8 +133,8 @@ def exe_cfd_scripts():
     scripts_list = [
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4_lev_2.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.12_open_v4_before_train.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.11_Fernandes_lev2.py"),
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.11_Fernandes_lev5.py")
+        ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_load_sim.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.11_Fernandes_lev2.py")
     ]
 
 
@@ -286,7 +286,7 @@ schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:00").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:00").do(lambda: schedule_job("metal"))
 schedule.every().day.at("22:31").do(lambda: schedule_job("cocoa_coffee"))
-schedule.every().day.at("21:30").do(lambda: schedule_job("before_cfd"))
+schedule.every().day.at("20:30").do(lambda: schedule_job("before_cfd"))
 schedule.every().day.at("22:30").do(lambda: schedule_job("cfd"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
