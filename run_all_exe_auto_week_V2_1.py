@@ -229,43 +229,51 @@ def exe_update_scripts():
 
 
 def schedule_job(script_type):
-    today = datetime.today().weekday()  # 月=0, 火=1, …, 土=5, 日=6
-    # ── ここで「秒が5」になるまで待つ ──
+    # 秒を 5 秒に合わせる（必ず 0～59 の範囲に収まる）
     now = datetime.now()
-    # 次に秒が5になるまでの秒数を計算（現在が5秒を過ぎていれば、次の分の5秒まで）
-    delay = (3 - now.second) if now.second < 3 else (3 - now.second)
-    time.sleep(delay)
-    # ──────────────────────────────────────
+    delay = (5 - now.second) % 60
+    if delay:
+        time.sleep(delay)
+
+    today = datetime.today().weekday()  # 月=0, 火=1, …, 土=5, 日=6
+
     if script_type == "japanese":
-        if today <= 5:  # 月～土
+        if today <= 5:
             print("Starting Japanese stock scripts at 16:15...")
             exe_japanese_stocks()
+
     elif script_type == "cfd":
-        if today <= 5:  # 月～土
+        if today <= 5:
             print("Starting other scripts at 07:30...")
             exe_cfd_scripts()
+
     elif script_type == "before_cfd":
-        if today <= 5:  # 月～土
+        if today <= 5:
             print("Starting other scripts at 07:30...")
             exe_before_cfd_scripts()
+
     elif script_type == "sakimono":
-        if today <= 5:  # 月～土
+        if today <= 5:
             print("Starting other scripts at 07:10...")
             exe_sakimono_scripts()
+
     elif script_type == "japanese_before":
-        if today <= 5:  # 月～土
+        if today <= 5:
             print("Starting other scripts at 08:02...")
             exe_japanese_before_scripts()
+
     elif script_type == "cocoa_coffee":
-        if today <= 5:  # 月～土
+        if today <= 5:
             print("Starting other scripts at 08:02...")
             exe_cocoa_coffee_scripts()
+
     elif script_type == "fx":
-        if today < 5:  # 土曜日
+        if today < 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
+
     elif script_type == "metal":
-        if today <= 5:  # 月～土
+        if today <= 5:
             print("Starting other scripts at 08:02...")
             exe_metal_scripts()
 
