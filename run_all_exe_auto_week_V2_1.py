@@ -230,6 +230,12 @@ def exe_update_scripts():
 
 def schedule_job(script_type):
     today = datetime.today().weekday()  # 月=0, 火=1, …, 土=5, 日=6
+    # ── ここで「秒が5」になるまで待つ ──
+    now = datetime.now()
+    # 次に秒が5になるまでの秒数を計算（現在が5秒を過ぎていれば、次の分の5秒まで）
+    delay = (3 - now.second) if now.second < 3 else (3 - now.second)
+    time.sleep(delay)
+    # ──────────────────────────────────────
     if script_type == "japanese":
         if today <= 5:  # 月～土
             print("Starting Japanese stock scripts at 16:15...")
@@ -269,11 +275,11 @@ def schedule_job(script_type):
 
 schedule.every().day.at("05:00").do(lambda: schedule_job("japanese_before"))
 schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
-schedule.every().day.at("09:01").do(lambda: schedule_job("japanese"))
-schedule.every().day.at("08:03").do(lambda: schedule_job("metal"))
-schedule.every().day.at("22:30").do(lambda: schedule_job("cocoa_coffee"))
+schedule.every().day.at("09:00").do(lambda: schedule_job("japanese"))
+schedule.every().day.at("08:00").do(lambda: schedule_job("metal"))
+schedule.every().day.at("22:31").do(lambda: schedule_job("cocoa_coffee"))
 schedule.every().day.at("21:30").do(lambda: schedule_job("before_cfd"))
-schedule.every().day.at("22:31").do(lambda: schedule_job("cfd"))
+schedule.every().day.at("22:30").do(lambda: schedule_job("cfd"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
 # 土曜日は07:30にfxスクリプトを実行
