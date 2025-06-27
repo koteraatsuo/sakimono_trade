@@ -992,9 +992,11 @@ if not df_simulation.empty:
             if percentage_return > 0:
                 winning_trades += 1
 
+            # １トレードあたりのポートフォリオ配分比率
+            weight = 1.0 / len(df_top3_deal)
+        
             # 再投資として、現在のポートフォリオ額に対してリターンを適用
-            current_portfolio *= (1 + percentage_return)
-            
+            current_portfolio *= (1 + (percentage_return * weight))
             # yfinanceを利用してティッカーコードから会社名を取得
             company_name = get_company_name(row["Ticker"])
             
@@ -1231,10 +1233,10 @@ def get_market_threshold_time():
     # DSTが適用されているかどうかで閾値を設定
     if now_market.dst() != timedelta(0):
         # 夏時間の場合
-        threshold = dtime(22, 31, 0)
+        threshold = dtime(6, 0, 0)
     else:
         # 冬時間の場合
-        threshold = dtime(23, 31, 0)
+        threshold = dtime(7, 0, 0)
     
     return threshold
 

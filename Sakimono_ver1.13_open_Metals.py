@@ -992,9 +992,11 @@ if not df_simulation.empty:
             if percentage_return > 0:
                 winning_trades += 1
 
+            # １トレードあたりのポートフォリオ配分比率
+            weight = 1.0 / len(df_top3_deal)
+        
             # 再投資として、現在のポートフォリオ額に対してリターンを適用
-            current_portfolio *= (1 + percentage_return)
-            
+            current_portfolio *= (1 + (percentage_return * weight)
             # yfinanceを利用してティッカーコードから会社名を取得
             company_name = get_company_name(row["Ticker"])
             
