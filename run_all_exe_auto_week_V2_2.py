@@ -101,13 +101,12 @@ def exe_before_cfd_scripts():
 
 
     scripts_list = [
-        ("C:/workspace/cfd_trade", "cfd_america_ver1.12_open_v4_before_train.py"),
-        ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train.py"),
+        ("C:/workspace/cfd_trade", "cfd_america_ver1.12_open_v5_before_train.py"),
+        ("C:/workspace/cfd_trade", "america_ver1.12_open_v5_before_train_4000.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4_lev_2.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_open_v4.py")
     ]
-
 
     activate_command = f"conda activate {conda_env}"
     for folder, script in scripts_list:
