@@ -681,7 +681,7 @@ GMAIL_PASSWORD = "yyyegokbvfcyufnm"
 
 # 送信先リスト
 recipient_list = [
-    "k.atsuojp429@gmail.com",
+
     # "k.atsuo-jp@outlook.com",
     "kotera2hjp@gmail.com",
     # "kotera2hjp@outlook.jp",
