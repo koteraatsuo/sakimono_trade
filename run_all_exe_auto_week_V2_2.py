@@ -135,6 +135,8 @@ def exe_cfd_scripts():
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.12_open_v4_before_train.py"),
         ("C:/workspace/cfd_trade", "america_ver1.12_open_v5_load_sim.py"),
         ("C:/workspace/cfd_trade", "cfd_america_ver1.11_Fernandes_lev5.py"),
+        ("C:/workspace/cfd_trade", "nihon_ver1.12_open_v4_load_sim_bigcompany.py"),
+        ("C:/workspace/cfd_trade", "nihon_ver1.12_open_v4_load_sim_nomalcompany.py"),
         ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_load_sim.py")
     ]
 
@@ -234,7 +236,8 @@ def exe_refresh_scripts():
     scripts_list = [
         ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
         ("C:/workspace/cfd_trade", "nihon_refresh_listpy"),
-        # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
+        ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
     ]
 
     activate_command = f"conda activate {conda_env}"
