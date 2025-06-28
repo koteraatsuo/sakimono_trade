@@ -228,6 +228,25 @@ def exe_update_scripts():
         except Exception as e:
             print(f"Error running {script} in {folder}: {e}")
 
+def exe_refresh_scripts():
+    # 日本株以外のスクリプトを実行
+    conda_env = "py310_fx"
+    scripts_list = [
+        ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
+        ("C:/workspace/cfd_trade", "nihon_refresh_listpy"),
+        # ("C:/workspace/sakimono_trade", "Sakimono_3top100単位_機械_S_emsemble_today_ver1.11.py"),
+    ]
+
+    activate_command = f"conda activate {conda_env}"
+    for folder, script in scripts_list:
+        try:
+            os.chdir(folder)
+            print(f"Running {script} in {folder}...")
+            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
+            print(f"Finished running {script}.")
+        except Exception as e:
+            print(f"Error running {script} in {folder}: {e}")
+
 
 def schedule_job(script_type):
     # 秒を 5 秒に合わせる（必ず 0～59 の範囲に収まる）
@@ -277,6 +296,11 @@ def schedule_job(script_type):
         if today <= 5:
             print("Starting other scripts at 08:02...")
             exe_metal_scripts()
+
+    elif script_type == "refresh":
+        if today == 5 or today == 6:
+            print("Starting refresh scripts at 07:00 on Saturday...")
+            exe_refresh_scripts()
 # スケジュール設定
 # 平日（月～金）は07:30に「other」スクリプト、16:15に「japanese」スクリプトを実行
 # schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
@@ -288,6 +312,7 @@ schedule.every().day.at("08:00").do(lambda: schedule_job("metal"))
 schedule.every().day.at("22:31").do(lambda: schedule_job("cocoa_coffee"))
 schedule.every().day.at("20:30").do(lambda: schedule_job("before_cfd"))
 schedule.every().day.at("22:30").do(lambda: schedule_job("cfd"))
+schedule.every().day.at("10:00").do(lambda: schedule_job("refresh"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
 # 土曜日は07:30にfxスクリプトを実行
