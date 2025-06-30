@@ -254,7 +254,7 @@ def exe_sendmail_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
     scripts_list = [
-        ("C:/workspace/nihon_kabu_trade", "nihon_data_send.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_data_send_topix_2_convert_chart.py"),
         ("C:/workspace/cfd_trade", "america_data_send.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
         # ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
@@ -315,7 +315,7 @@ def schedule_job(script_type):
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
     elif script_type == "send_mail":
-        if today < 7:
+        if today == 6:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_sendmail_scripts()
     elif script_type == "metal":
