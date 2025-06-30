@@ -261,8 +261,8 @@ def exe_refresh_scripts():
         ("C:/workspace/cfd_trade", "nihon_refresh_listpy"),
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
         ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
+        ("C:/workspace/cfd_trade", "sp500_csv.py"),    
     ]
-
 
     activate_command = f"conda activate {conda_env}"
     for folder, script in scripts_list:
