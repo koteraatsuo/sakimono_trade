@@ -1374,7 +1374,7 @@ recipient_list = [
     # "kotera2hjp@yahoo.co.jp",
     "k.atsuofxtrade@gmail.com",
     "satosato.k543@gmail.com",
-    # "yukikimura1124@gmail.com"
+    "clubtrdr@gmail.com"
 ]
 
 
@@ -1593,7 +1593,7 @@ try:
         msg = MIMEMultipart("related")
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"指数v2 ショートおすすめ結果 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
+        msg["Subject"] = f"指数v2 ショートフィクションおすすめ結果 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
 
         # HTML本文を作成
         body_html = f"""
@@ -1622,7 +1622,7 @@ try:
         <body>
             <p>{recipient} 様</p>
             <p>平素よりお世話になっております。</p>
-            <p>本日の購入リストのおすすめ結果をお送りいたします。</p>
+            <p>本日の購入リストのフィクションおすすめ結果をお送りいたします。</p>
             <p>現在の投資額: {int(current_portfolio):,} 円</p>
             <p>初期投資額: {int(initial_investment):,} 円</p>
             <p>レバレッジ: {leverage} 倍</p>
