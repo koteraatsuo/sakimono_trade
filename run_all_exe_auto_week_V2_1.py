@@ -176,7 +176,7 @@ def exe_every_6hour_sendmail_scripts():
     conda_env = "py310_fx"
     scripts_list = [
         ("C:/workspace/sakimono_trade", "bloomberg_news.py"),
-        # ("C:/workspace/cfd_trade", "america_data_send.py"),
+        ("C:/workspace/sakimono_trade", "sns_news.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
         # ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
     ]

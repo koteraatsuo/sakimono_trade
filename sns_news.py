@@ -293,11 +293,7 @@ X_URLS = [
     "https://x.com/sikeda23",      # 池田伸太郎
     "https://x.com/goto_finance",
     "https://x.com/yurumazu",
-    "https://x.com/okasanman",
-    "https://x.com/noatake1127",
     "https://x.com/nicosokufx",
-    "https://x.com/tapazou29",
-    "https://x.com/kabu1000",
     "https://x.com/NickTimiraos",
     "https://x.com/BloombergJapan",
     "https://x.com/ReutersJapan",
@@ -314,7 +310,7 @@ YOUTUBE_CHANNELS = {
 }
 
 # YouTube Data API キー
-YOUTUBE_API_KEY = "YOUR_YOUTUBE_API_KEY"
+YOUTUBE_API_KEY = "AIzaSyCQfXzF4Nn3UOux-DE9m4ldDtdNmo6C5jE"
 
 # ————————————————
 # Gmail 送信設定
@@ -366,18 +362,18 @@ def build_report():
     lines.append("=== X アカウント URL一覧 ===\n")
     for url in X_URLS:
         lines.append(url)
-    # lines.append("\n=== YouTube 最新動画 ===\n")
-    # for name, cid in YOUTUBE_CHANNELS.items():
-    #     lines.append(f"--- {name} ---")
-    #     try:
-    #         vids = fetch_latest_videos(cid, max_results=1)
-    #         if vids:
-    #             lines.extend(vids)
-    #         else:
-    #             lines.append("動画が見つかりませんでした。")
-    #     except Exception as e:
-    #         lines.append(f"取得エラー: {e}")
-    #     lines.append("")
+    lines.append("\n=== YouTube 最新動画 ===\n")
+    for name, cid in YOUTUBE_CHANNELS.items():
+        lines.append(f"--- {name} ---")
+        try:
+            vids = fetch_latest_videos(cid, max_results=1)
+            if vids:
+                lines.extend(vids)
+            else:
+                lines.append("動画が見つかりませんでした。")
+        except Exception as e:
+            lines.append(f"取得エラー: {e}")
+        lines.append("")
     return "\n".join(lines)
 
 def send_email(subject, body):
@@ -399,7 +395,7 @@ def send_email(subject, body):
 # ————————————————
 # メイン処理
 # ————————————————
-# if __name__ == "__main__":
+if __name__ == "__main__":
     # main()
     report = build_report()
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
