@@ -38,13 +38,42 @@ RECIPIENT_LIST = [
 X_ACCOUNTS: Dict[str,str] = {
     "NOBU塾":            "https://x.com/JACK_ORAN21",
     "池田伸太郎":        "https://x.com/sikeda23",
+    "Yuto Haga":          "https://x.com/Yuto_Headline", 
+    "Street_Insights":          "https://x.com/Street_Insights", 
     "後藤達也":          "https://x.com/goto_tatsuya",
+    "石原順（西山孝四郎）":  "https://x.com/ishiharajun",      # placeholder URL
+    "TEAM ハロンズ":          "https://x.com/TeamHallons",
+    "Silver hand":          "https://x.com/Silver47samurai",      # placeholder URL
+    "亀太郎":          "https://x.com/kame_taro_kabu1",  
     "ゆるまづ":          "https://x.com/yurumazu",
     "にこそくfx":        "https://x.com/nicosokufx",
-    "Nick Timiraos":     "https://x.com/NickTimiraos",
+    "関原 大輔":     "https://x.com/sekihara_d",
     "Bloomberg Japan":   "https://x.com/BloombergJapan",
     "Reuters Japan":     "https://x.com/ReutersJapan",
+
+
+
+
+
+
+
+
+    # 追加: 日本人マーケット系インフルエンサー
+    #  # placeholder URL
+    # "佐々木軒":          "https://x.com/sasaki_ken",      # placeholder URL
+    # "吉田真弓":          "https://x.com/yoshida_mayumi",  # placeholder URL
+    # # 追加: 外資系金融出身マーケット系インフルエンサー
+    # "Afzal Hussein":     "https://x.com/Afzal_Hussein_",
+    # "Patrick Boyle":     "https://x.com/PatrickEBoyle",
+    # "Anton Kreil":       "https://x.com/AntonKreil",
+    # "Raoul Pal":         "https://x.com/RaoulGMI",
+    # "Gary Black":        "https://x.com/garyblack00",
+    # "Economics Ethan":   "https://x.com/EconEthan",
+    # "Dan Takahashi":     "https://x.com/Dan_Takahashi_",
+    # "Kei Tanaka":        "https://x.com/KeiTanaka_Radio",
+
 }
+
 
 # ─── Bloomberg市況ニュース設定 ────────────────────────────────────
 BASE_URL     = "https://www.bloomberg.co.jp"
@@ -56,9 +85,16 @@ SCROLL_DELAY = 200  # ミリ秒
 
 # ─── YouTube設定 ─────────────────────────────────────────────────
 YOUTUBE_CHANNELS: Dict[str,str] = {
-    "ノブ塾":       "UCOX7X_ddhi1oXurSbJsk45Q",
-    "yenzo market": "UCk-Jlsfh0cIfTTbB6U5xMaA",
-    "ばっちゃまの米国株": "UCzoYzblsE4SEfrQmdjTQZDw",
+    "ノブ塾":               "UCOX7X_ddhi1oXurSbJsk45Q",
+    "yenzo market":        "UCk-Jlsfh0cIfTTbB6U5xMaA",
+    "ばっちゃまの米国株":   "UCzoYzblsE4SEfrQmdjTQZDw",
+    # # 追加: 外資系金融出身マーケット系インフルエンサー
+    # "Afzal Hussein":       "UCUhoTvkXvwXQ8n935H8l1lg",  # channel ID placeholder
+    # "Patrick Boyle":       "UCMYK3QVGKhGCiWJaOsaG9Rg",  # channel ID placeholder
+    # "Anton Kreil":         "UCgPf35i6H0GnGkR0CGlvdJQ",  # InstituteOfTrading channel
+    # "Real Vision Finance": "UCP5tMZxH6sJA5QsYA1L3FQA",  # Real Vision channel
+    # "Economics Ethan":     "UCeOz5YHePhqjzFmiODoy2cA",  # placeholder
+    # "Dan Takahashi":       "UCX6b17PVsYBQ0ip5gyeme-Q",  # c/DanTakahashi
 }
 YOUTUBE_API_KEY = "AIzaSyCQfXzF4Nn3UOux-DE9m4ldDtdNmo6C5jE"
 
