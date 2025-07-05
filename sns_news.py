@@ -79,7 +79,7 @@ X_ACCOUNTS: Dict[str,str] = {
 BASE_URL     = "https://www.bloomberg.co.jp"
 TARGETS      = ["日本市況", "米国市況"]
 MAX_ARTICLES = 10
-TOP_N        = 5
+TOP_N        = 12
 SCROLL_STEPS = 15
 SCROLL_DELAY = 200  # ミリ秒
 
@@ -211,7 +211,7 @@ def build_email_content(
     # Bloombergニュース
     lines.append("<h2>Bloomberg 市況ニュース</h2>")
 
-    lines.append("<h3>トップ5記事（全体）</h3>")
+    lines.append("<h3>トップ12記事（全体）</h3>")
     lines.append("<table border='1' cellspacing='0' cellpadding='5'><tr><th>記事タイトル</th><th>URL</th></tr>")
     for ta in top_articles:
         lines.append(f"<tr><td>{ta['title']}</td><td><a href='{ta['url']}'>{ta['url']}</a></td></tr>")
