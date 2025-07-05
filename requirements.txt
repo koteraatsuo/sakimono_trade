@@ -15,4 +15,4 @@ schedule
 playwright
 google-api-python-client
 psutil
-playwright
+investpy
