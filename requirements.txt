@@ -12,3 +12,7 @@ Metatrader5
 pyttsx3
 flask
 schedule
+playwright
+google-api-python-client
+psutil
+playwright
