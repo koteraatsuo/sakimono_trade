@@ -339,7 +339,7 @@ def schedule_job(script_type):
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
     elif script_type == "send_mail":
-        if today == 6:
+        if today == 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_sendmail_scripts()
     elif script_type == "6hour_send_mail":
