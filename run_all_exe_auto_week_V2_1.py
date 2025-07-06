@@ -155,7 +155,7 @@ def exe_sendmail_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
     scripts_list = [
-        ("C:/workspace/nihon_kabu_trade", "nihon_data_send_topix_2_convert_chart.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_data_send_topix_2_convert_chart_2.py"),
         ("C:/workspace/cfd_trade", "america_data_send.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
         # ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
