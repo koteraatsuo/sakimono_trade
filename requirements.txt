@@ -16,3 +16,4 @@ playwright
 google-api-python-client
 psutil
 investpy
+xlrd  
