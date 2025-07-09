@@ -40,12 +40,12 @@ X_ACCOUNTS: Dict[str,str] = {
     "池田伸太郎":        "https://x.com/sikeda23",
     "Yuto Haga":          "https://x.com/Yuto_Headline", 
     "Street_Insights":          "https://x.com/Street_Insights", 
-    "後藤達也":          "https://x.com/goto_tatsuya",
+    "後藤達也":          "https://x.com/goto_finance",
     "石原順（西山孝四郎）":  "https://x.com/ishiharajun",      # placeholder URL
     "TEAM ハロンズ":          "https://x.com/TeamHallons",
     "Silver hand":          "https://x.com/Silver47samurai",      # placeholder URL
     "亀太郎":          "https://x.com/kame_taro_kabu1",  
-    "ゆるまづ":          "https://x.com/yurumazu",
+    "エミン":          "https://x.com/yurumazu",
     "にこそくfx":        "https://x.com/nicosokufx",
     "関原 大輔":     "https://x.com/sekihara_d",
     "Bloomberg Japan":   "https://x.com/BloombergJapan",
@@ -85,9 +85,10 @@ SCROLL_DELAY = 200  # ミリ秒
 
 # ─── YouTube設定 ─────────────────────────────────────────────────
 YOUTUBE_CHANNELS: Dict[str,str] = {
-    "ノブ塾":               "UCOX7X_ddhi1oXurSbJsk45Q",
+    "NOBU塾":               "UCOX7X_ddhi1oXurSbJsk45Q",
     "yenzo market":        "UCk-Jlsfh0cIfTTbB6U5xMaA",
-    "ばっちゃまの米国株":   "UCzoYzblsE4SEfrQmdjTQZDw",
+    "ばっちゃまの米国株":   "UCzZSnddt3xTL0V-ELJaMUFw",
+    "ばっちゃまの米国株 サブ":   "UCzoYzblsE4SEfrQmdjTQZDw",
     # # 追加: 外資系金融出身マーケット系インフルエンサー
     # "Afzal Hussein":       "UCUhoTvkXvwXQ8n935H8l1lg",  # channel ID placeholder
     # "Patrick Boyle":       "UCMYK3QVGKhGCiWJaOsaG9Rg",  # channel ID placeholder
@@ -203,13 +204,13 @@ def build_email_content(
     lines.append("<html><body>")
     lines.append(f"<h1>マーケット情報レポート {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}</h1>")
     # X一覧をテーブルで表示
-    lines.append("<h2>X アカウント一覧</h2>")
+    lines.append("<h2>X アカウント一覧 (速報)</h2>")
     lines.append("<table border='1' cellspacing='0' cellpadding='5'><tr><th>名称</th><th>URL</th></tr>")
     for name, url in X_ACCOUNTS.items():
         lines.append(f"<tr><td>{name}</td><td><a href='{url}'>{url}</a></td></tr>")
     lines.append("</table>")
     # Bloombergニュース
-    lines.append("<h2>Bloomberg 市況ニュース</h2>")
+    lines.append("<h2>Bloomberg 市況ニュース (報道)</h2>")
 
     lines.append("<h3>トップ12記事（全体）</h3>")
     lines.append("<table border='1' cellspacing='0' cellpadding='5'><tr><th>記事タイトル</th><th>URL</th></tr>")
@@ -228,7 +229,7 @@ def build_email_content(
         # トップ5記事（全体）
 
     # YouTube最新動画
-    lines.append("<h2>YouTube 最新動画</h2>")
+    lines.append("<h2>YouTube 最新動画 (遅延報道)</h2>")
     lines.append("<table border='1' cellspacing='0' cellpadding='5'><tr><th>チャンネル</th><th>動画</th></tr>")
     for name, cid in YOUTUBE_CHANNELS.items():
         vid = fetch_latest_video(cid)
@@ -243,7 +244,7 @@ def build_email_content(
 # ─── メール送信 ────────────────────────────────────────────────
 def send_email(html_body: str):
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"マーケット情報レポート {time.strftime('%Y-%m-%d')}"
+    msg["Subject"] = f"【速報】マーケット情報レポート {time.strftime('%Y-%m-%d')}"
     msg["From"]    = GMAIL_USER
     msg["To"]      = ", ".join(RECIPIENT_LIST)
     part = MIMEText(html_body, "html", "utf-8")
