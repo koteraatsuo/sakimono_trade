@@ -298,8 +298,9 @@ def exe_refresh_fx_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_deeplearning"
     scripts_list = [
-        ("C:/workspace/fx_deepleaning", "alpha_zero_fx_USDJPY_before_train_V70_term8_FP16_long_v2.py"),
+        ("C:/workspace/fx_deepleaning", "alpha_zero_fx_USDJPY_before_train_V70_term8_FP16_long_v2_auto_refresh.py"),
     ]
+
 
     activate_command = f"conda activate {conda_env}"
     for folder, script in scripts_list:
@@ -368,7 +369,7 @@ def schedule_job(script_type):
         if today == 5 or today == 6:
             print("Starting refresh scripts at 07:00 on Saturday...")
             exe_refresh_scripts()
-            
+
     elif script_type == "refresh_fx":
         if today == 5 or today == 6:
             print("Starting refresh scripts at 07:00 on Saturday...")
