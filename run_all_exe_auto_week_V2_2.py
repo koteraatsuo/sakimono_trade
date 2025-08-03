@@ -336,10 +336,12 @@ def schedule_job(script_type):
         if today < 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
+
     elif script_type == "send_mail":
         if today == 6:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_sendmail_scripts()
+
     elif script_type == "metal":
         if today <= 5:
             print("Starting other scripts at 08:02...")
@@ -354,6 +356,7 @@ def schedule_job(script_type):
         if today == 5 or today == 6:
             print("Starting refresh scripts at 07:00 on Saturday...")
             exe_refresh_scripts()
+
 # スケジュール設定
 # 平日（月～金）は07:30に「other」スクリプト、16:15に「japanese」スクリプトを実行
 # schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
@@ -368,6 +371,7 @@ schedule.every().day.at("05:30").do(lambda: schedule_job("send_mail"))
 schedule.every().day.at("22:30").do(lambda: schedule_job("cfd"))
 schedule.every().day.at("10:00").do(lambda: schedule_job("refresh"))
 schedule.every().day.at("07:00").do(lambda: schedule_job("refresh_fx"))
+
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
 # 土曜日は07:30にfxスクリプトを実行
