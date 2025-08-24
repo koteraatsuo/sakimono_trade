@@ -11,6 +11,7 @@
 – まとめてGmail経由でHTMLメール送信
 """
 
+
 import time
 import datetime
 import smtplib
@@ -21,11 +22,38 @@ from playwright.sync_api import sync_playwright
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# ─── SMTP／送信先設定 ─────────────────────────────────────────
-SMTP_SERVER    = "smtp.gmail.com"
-SMTP_PORT      = 587
-GMAIL_USER     = "k.atsuofxtrade@gmail.com"
-GMAIL_PASSWORD = "yyyegokbvfcyufnm"
+import smtplib
+from dotenv import load_dotenv
+import os
+
+# 1. まず.envファイルを読み込む
+load_dotenv()
+import time
+import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+from email.mime.image import MIMEImage
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+
+
+# Gmail 設定
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+GMAIL_USER = "k.atsuofxtrade@gmail.com"
+GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD")
+
+
+
+
+RECIPIENT_LIST = [
+    "kotera2hjp@gmail.com",
+    "k.atsuofxtrade@gmail.com",
+    "satosato.k543@gmail.com",
+    "clubtrdr@gmail.com",
+]
 
 RECIPIENT_LIST = [
     "kotera2hjp@gmail.com",
