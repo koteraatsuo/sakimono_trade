@@ -18,3 +18,4 @@ psutil
 investpy
 xlrd  
 wikipedia     
+tqdm
