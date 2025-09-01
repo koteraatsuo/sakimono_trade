@@ -1359,11 +1359,19 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 
 
+from dotenv import load_dotenv
+import os
+
+# 1. まず.envファイルを読み込む
+load_dotenv()
+import math
+
 # Gmail 設定
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 GMAIL_USER = "k.atsuofxtrade@gmail.com"
-GMAIL_PASSWORD = "yyyegokbvfcyufnm"
+GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD")
+
 
 # 送信先リスト
 recipient_list = [
