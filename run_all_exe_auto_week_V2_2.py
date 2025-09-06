@@ -10,6 +10,8 @@ def exe_japanese_stocks():
     scripts_list = [
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim_bigcompany.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim_nomalcompany.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim_bigcompany_top70_down_cut.py"),
+        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim_bigcompany_top50_down_cut.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim_bigcompany_top60.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim_nomalcompany_top60.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.08_top30_load_sim_Fernandes.py"),
