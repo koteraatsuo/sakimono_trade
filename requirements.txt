@@ -18,3 +18,7 @@ psutil
 investpy
 xlrd  
 wikipedia     
+tqdm
+requests_cache 
+requests_ratelimiter
+ttkthemes

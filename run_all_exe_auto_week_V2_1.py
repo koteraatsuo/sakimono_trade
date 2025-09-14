@@ -294,6 +294,26 @@ def exe_refresh_scripts():
             print(f"Error running {script} in {folder}: {e}")
 
 
+def exe_refresh_fx_scripts():
+    # 日本株以外のスクリプトを実行
+    conda_env = "py310_deeplearning"
+    scripts_list = [
+        ("C:/workspace/fx_deepleaning", "alpha_zero_fx_USDJPY_before_train_V70_term8_FP16_long_v2_auto_refresh.py"),
+    ]
+
+
+    activate_command = f"conda activate {conda_env}"
+    for folder, script in scripts_list:
+        try:
+            os.chdir(folder)
+            print(f"Running {script} in {folder}...")
+            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
+            print(f"Finished running {script}.")
+        except Exception as e:
+            print(f"Error running {script} in {folder}: {e}")
+
+
+
 
 def schedule_job(script_type):
     # 秒を 5 秒に合わせる（必ず 0～59 の範囲に収まる）
@@ -344,10 +364,16 @@ def schedule_job(script_type):
             exe_sendmail_scripts()
     elif script_type == "6hour_send_mail":
         exe_every_6hour_sendmail_scripts()
+
     elif script_type == "refresh":
         if today == 5 or today == 6:
             print("Starting refresh scripts at 07:00 on Saturday...")
             exe_refresh_scripts()
+
+    elif script_type == "refresh_fx":
+        if today == 5 or today == 6:
+            print("Starting refresh scripts at 07:00 on Saturday...")
+            exe_refresh_fx_scripts()
 
     elif script_type == "metal":
         if today <= 5:
@@ -372,6 +398,7 @@ schedule.every().day.at("06:30").do(lambda: schedule_job("6hour_send_mail"))
 schedule.every().day.at("12:30").do(lambda: schedule_job("6hour_send_mail"))
 schedule.every().day.at("18:30").do(lambda: schedule_job("6hour_send_mail"))
 schedule.every().day.at("01:30").do(lambda: schedule_job("6hour_send_mail"))
+schedule.every().day.at("07:00").do(lambda: schedule_job("refresh_fx"))
 schedule.every().day.at("10:00").do(lambda: schedule_job("refresh"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())

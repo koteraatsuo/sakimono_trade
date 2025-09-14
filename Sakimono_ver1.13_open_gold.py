@@ -1516,11 +1516,23 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 
 
+
+
+
+
+from dotenv import load_dotenv
+import os
+
+# 1. まず.envファイルを読み込む
+load_dotenv()
+import math
+
 # Gmail 設定
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 GMAIL_USER = "k.atsuofxtrade@gmail.com"
-GMAIL_PASSWORD = "yyyegokbvfcyufnm"
+GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD")
+
 
 # 送信先リスト
 recipient_list = [
@@ -1713,7 +1725,7 @@ try:
         msg = MIMEMultipart("related")
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"Metal_V2　購入リストのフィクションおすすめ結果 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
+        msg["Subject"] = f"GOLD_V2　購入リストのフィクションおすすめ結果 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
 
         # HTML本文を作成
         body_html = f"""
@@ -1749,7 +1761,7 @@ try:
             <p>取引期間: {deal_term} 営業日</p>
             <p>総合勝率: {win_rate :.2f} %</p>
 
-            <h3>上位5件の推奨銘柄:</h3>
+            <h3>上位5件の推奨銘柄:(0.8以上でエントリー)</h3>
             {top5_stocks_html}
 
             <h3>曜日ごとの勝率:</h3>
