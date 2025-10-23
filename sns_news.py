@@ -117,8 +117,9 @@ YOUTUBE_CHANNELS: Dict[str,str] = {
     "yenzo market":        "UCk-Jlsfh0cIfTTbB6U5xMaA",
     "ばっちゃまの米国株":   "UCzZSnddt3xTL0V-ELJaMUFw",
     "ばっちゃまの米国株 サブ":   "UCzoYzblsE4SEfrQmdjTQZDw",
+    "朝倉慶":   "@info_ask1",
     # # 追加: 外資系金融出身マーケット系インフルエンサー
-    # "Afzal Hussein":       "UCUhoTvkXvwXQ8n935H8l1lg",  # channel ID placeholder
+    "米株マーケット":       "UCTv64LA7FkksSvp_yT5UbPQ",  # channel ID placeholder
     # "Patrick Boyle":       "UCMYK3QVGKhGCiWJaOsaG9Rg",  # channel ID placeholder
     # "Anton Kreil":         "UCgPf35i6H0GnGkR0CGlvdJQ",  # InstituteOfTrading channel
     # "Real Vision Finance": "UCP5tMZxH6sJA5QsYA1L3FQA",  # Real Vision channel
