@@ -120,7 +120,7 @@ YOUTUBE_CHANNELS: Dict[str,str] = {
     "朝倉慶":   "@info_ask1",
     # # 追加: 外資系金融出身マーケット系インフルエンサー
     "米株マーケット":       "UCTv64LA7FkksSvp_yT5UbPQ",  # channel ID placeholder
-    # "Patrick Boyle":       "UCMYK3QVGKhGCiWJaOsaG9Rg",  # channel ID placeholder
+    "エミンユルマズ":       "@yurumazu",  # channel ID placeholder
     # "Anton Kreil":         "UCgPf35i6H0GnGkR0CGlvdJQ",  # InstituteOfTrading channel
     # "Real Vision Finance": "UCP5tMZxH6sJA5QsYA1L3FQA",  # Real Vision channel
     # "Economics Ethan":     "UCeOz5YHePhqjzFmiODoy2cA",  # placeholder
