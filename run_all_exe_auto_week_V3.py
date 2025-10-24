@@ -144,7 +144,7 @@ def exe_cfd_scripts():
     scripts_list = [
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.10_short_open_v4_lev_2.py"),
         ("C:/workspace/cfd_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40.py"),
-        ("C:/workspace/cfd_trade", "nnihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany.py.py"),
+        ("C:/workspace/cfd_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany.py.py"),
         # ("C:/workspace/cfd_trade", "nihon_ver1.12_open_v4_load_sim_nomalcompany.py"),
         # ("C:/workspace/cfd_trade", "america_ver1.12_open_v5_load_sim.py"),
         # ("C:/workspace/cfd_trade", "cfd_america_ver1.11_Fernandes_lev5.py"),
