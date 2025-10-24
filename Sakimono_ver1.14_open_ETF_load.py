@@ -30,6 +30,45 @@ import mplfinance as mpf
 from zoneinfo import ZoneInfo
 from pandas.tseries.offsets import BusinessDay
 
+
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
+import lightgbm as lgb
+from catboost import CatBoostClassifier
+import xgboost as xgb
+from pytorch_tabnet.tab_model import TabNetClassifier
+import torch
+# ★ NGBoost 変更点 1: NGBoost関連ライブラリをインポート
+from ngboost import NGBClassifier
+from ngboost.distns import Bernoulli
+from sklearn.tree import DecisionTreeRegressor
+import joblib
+import yfinance as yf
+from datetime import datetime, timedelta, time as dtime
+import json
+from dotenv import load_dotenv
+import os
+import math
+import logging
+import time
+import requests
+from bs4 import BeautifulSoup
+import re
+import wikipedia
+import urllib.parse
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+from email.mime.image import MIMEImage
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+from zoneinfo import ZoneInfo
+from pandas.tseries.offsets import BusinessDay
+
 # .envファイルを読み込む
 load_dotenv()
 
@@ -259,7 +298,7 @@ try:
     if not all_data:
         raise ValueError("スコア計算対象の銘柄（1年間の上昇率がプラスのETF）がありませんでした。")
 
-    top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False)
+    top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False).head(15)
 
     top_ranked["銘柄名"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('銘柄名', 'N/A'))
     top_ranked["カテゴリ"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('カテゴリ', 'N/A'))
@@ -286,80 +325,150 @@ data = yf.download(ticker_symbols, period="10y", progress=False, auto_adjust=Fal
 ticker_data_dict = {ticker: data.xs(ticker, axis=1, level=0).copy() for ticker in ticker_symbols if ticker in data.columns.get_level_values(0)}
 
 # =================================================================================
-# 3. モデルの準備（条件に応じて学習または読み込み）
+# 3. モデルの準備（クラスベース設計による最終修正版）
 # =================================================================================
 print("\nモデルの準備（必要に応じて学習・再学習）を開始します...")
-OUTPUT_DIR = "saved_models_ensemble"
+OUTPUT_DIR = "saved_models_ensemble_1day"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-lgb_models_dict, xgb_models_dict, cat_models_dict, scalers_dict = {}, {}, {}, {}
-lookback_days = 25; deal_term = 5
+# 5モデル分のモデル辞書を準備
+lgb_models_dict, xgb_models_dict, cat_models_dict, tabnet_models_dict, ngb_models_dict, scalers_dict = {}, {}, {}, {}, {}, {}
+lookback_days = 25
+deal_term = 1
 ONE_MONTH_AGO = datetime.now() - timedelta(days=30)
+TRAIN_RATIO = 0.9
 
+# ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+# ★ 修正点: 状態管理のためのヘルパークラスを定義 ★
+# これにより、nonlocalの問題を完全に回避します。
+class ModelUpdater:
+    def __init__(self, ticker):
+        self.ticker = ticker
+        self.X_train_cache = None
+        self.y_train_cache = None
+        self.X_train_scaled_cache = None
+        self.is_data_prepared = False
+        
+        # 各モデルのパスをインスタンス変数として保持
+        self.paths = {
+            'lgb': os.path.join(OUTPUT_DIR, f"{ticker}_lgb_model.pkl"),
+            'xgb': os.path.join(OUTPUT_DIR, f"{ticker}_xgb_model.pkl"),
+            'cat': os.path.join(OUTPUT_DIR, f"{ticker}_cat_model.pkl"),
+            'ngb': os.path.join(OUTPUT_DIR, f"{ticker}_ngb_model.pkl"),
+            'tabnet': os.path.join(OUTPUT_DIR, f"{ticker}_tabnet_model.zip"),
+            'scaler': os.path.join(OUTPUT_DIR, f"{ticker}_scaler.pkl")
+        }
+
+    def check_if_update_needed(self, model_key):
+        path = self.paths[model_key]
+        if not os.path.exists(path): return True
+        if datetime.fromtimestamp(os.path.getmtime(path)) < ONE_MONTH_AGO: return True
+        return False
+
+    def prepare_data_once(self):
+        if self.is_data_prepared:
+            return True
+        
+        print(f"  > (初回実行) {self.ticker} の訓練データの特徴量を生成しています...")
+        df_price_full = ticker_data_dict.get(self.ticker)
+        if df_price_full is None or df_price_full.empty or len(df_price_full) < 200:
+            print(f"  > データ不足のためスキップ。")
+            return False
+        
+        split_index = int(len(df_price_full) * TRAIN_RATIO)
+        df_price_train = df_price_full.iloc[:split_index]
+        
+        X_train, y_train, _, _ = create_combined_features(df_price_train, lookback_days=lookback_days, deal_term=deal_term)
+        if len(X_train) < 50:
+            print(f"  > 訓練サンプル数不足({len(X_train)}件)のためスキップ。")
+            return False
+
+        self.X_train_cache = X_train.astype(np.float32)
+        self.y_train_cache = y_train.astype(np.int64)
+        self.is_data_prepared = True
+        return True
+
+    def run_updates(self):
+        # --- スケーラーの更新 ---
+        if self.check_if_update_needed('scaler'):
+            print(f"  > スケーラーを更新します...")
+            if not self.prepare_data_once(): return False
+            scaler = StandardScaler().fit(self.X_train_cache)
+            joblib.dump(scaler, self.paths['scaler'])
+            print(f"    - 新しいスケーラーを保存しました。")
+        
+        # --- 各モデルの更新 ---
+        # スケーリング済みデータが必要になった場合に一度だけ作成
+        def get_scaled_data():
+            if self.X_train_scaled_cache is None:
+                scaler = joblib.load(self.paths['scaler'])
+                self.X_train_scaled_cache = scaler.transform(self.X_train_cache)
+            return self.X_train_scaled_cache
+
+        if self.check_if_update_needed('lgb'):
+            print(f"  > LightGBMを更新します...")
+            if not self.prepare_data_once(): return False
+            lgb_model = lgb.LGBMClassifier(random_state=42).fit(get_scaled_data(), self.y_train_cache)
+            joblib.dump(lgb_model, self.paths['lgb'])
+
+        if self.check_if_update_needed('xgb'):
+            print(f"  > XGBoostを更新します...")
+            if not self.prepare_data_once(): return False
+            xgb_model = xgb.XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss').fit(get_scaled_data(), self.y_train_cache)
+            joblib.dump(xgb_model, self.paths['xgb'])
+
+        if self.check_if_update_needed('cat'):
+            print(f"  > CatBoostを更新します...")
+            if not self.prepare_data_once(): return False
+            cat_model = CatBoostClassifier(random_state=42, verbose=0, iterations=500).fit(get_scaled_data(), self.y_train_cache)
+            joblib.dump(cat_model, self.paths['cat'])
+            
+        if self.check_if_update_needed('ngb'):
+            print(f"  > NGBoostを更新します...")
+            if not self.prepare_data_once(): return False
+            base_learner = DecisionTreeRegressor(criterion='friedman_mse', max_depth=3)
+            ngb_model = NGBClassifier(Dist=Bernoulli, Base=base_learner, n_estimators=500, learning_rate=0.05, verbose=False, random_state=42)
+            ngb_model.fit(get_scaled_data(), self.y_train_cache)
+            joblib.dump(ngb_model, self.paths['ngb'])
+
+        if self.check_if_update_needed('tabnet'):
+            print(f"  > TabNetを更新します...")
+            if not self.prepare_data_once(): return False
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            tabnet_model = TabNetClassifier(optimizer_fn=torch.optim.Adam, optimizer_params=dict(lr=2e-2),
+                                            scheduler_params={"step_size":10, "gamma":0.9}, scheduler_fn=torch.optim.lr_scheduler.StepLR,
+                                            mask_type='sparsemax', device_name=device, verbose=0)
+            tabnet_model.fit(X_train=get_scaled_data(), y_train=self.y_train_cache, eval_set=[(get_scaled_data(), self.y_train_cache)],
+                             patience=50, max_epochs=1000, batch_size=1024)
+            tabnet_model.save_model(self.paths['tabnet'].replace(".zip", ""))
+
+        return True
+
+    def load_all_models(self):
+        lgb_models_dict[self.ticker] = joblib.load(self.paths['lgb'])
+        xgb_models_dict[self.ticker] = joblib.load(self.paths['xgb'])
+        cat_models_dict[self.ticker] = joblib.load(self.paths['cat'])
+        ngb_models_dict[self.ticker] = joblib.load(self.paths['ngb'])
+        tabnet_model = TabNetClassifier(); tabnet_model.load_model(self.paths['tabnet'])
+        tabnet_models_dict[self.ticker] = tabnet_model
+        scalers_dict[self.ticker] = joblib.load(self.paths['scaler'])
+        print(f"  > {self.ticker}: 全モデルのロード完了。")
+
+# ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+# メインの for ループ
 for ticker in ticker_symbols:
-    lgb_path = os.path.join(OUTPUT_DIR, f"{ticker}_lgb_model.pkl")
-    xgb_path = os.path.join(OUTPUT_DIR, f"{ticker}_xgb_model.pkl")
-    cat_path = os.path.join(OUTPUT_DIR, f"{ticker}_cat_model.pkl")
-    scaler_path = os.path.join(OUTPUT_DIR, f"{ticker}_scaler.pkl")
-    
-    all_files_exist = all(os.path.exists(p) for p in [lgb_path, xgb_path, cat_path, scaler_path])
-    
-    should_train = False
-    if not all_files_exist:
-        should_train = True
-        print(f"--- {ticker}: モデルファイルが不足しているため、新規に学習します。 ---")
-    else:
-        last_modified_date = datetime.fromtimestamp(os.path.getmtime(scaler_path))
-        if last_modified_date < ONE_MONTH_AGO:
-            should_train = True
-            print(f"--- {ticker}: モデルが1ヶ月以上古いため({last_modified_date.strftime('%Y-%m-%d')})、再学習します。 ---")
-
-    if should_train:
-        df_price = ticker_data_dict.get(ticker)
-        if df_price is None or df_price.empty or len(df_price) < 200:
-            print(f"--- {ticker}: 学習データが不足しているためスキップ。 ---")
-            continue
-            
-        try:
-            print(f"  > 特徴量生成中...")
-            X, y, _, _ = create_combined_features(df_price, lookback_days=lookback_days, deal_term=deal_term)
-            
-            if len(X) < 50:
-                print(f"--- {ticker}: 特徴量生成後のサンプル数が不足({len(X)}件)のためスキップ。 ---")
-                continue
-
-            scaler = StandardScaler().fit(X)
-            X_scaled = scaler.transform(X)
-
-            print(f"  > LightGBM 学習中...")
-            lgb_model = lgb.LGBMClassifier(random_state=42).fit(X_scaled, y)
-            print(f"  > XGBoost 学習中...")
-            xgb_model = xgb.XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss').fit(X_scaled, y)
-            print(f"  > CatBoost 学習中...")
-            cat_model = CatBoostClassifier(random_state=42, verbose=0, iterations=500).fit(X_scaled, y)
-
-            joblib.dump(lgb_model, lgb_path); joblib.dump(xgb_model, xgb_path)
-            joblib.dump(cat_model, cat_path); joblib.dump(scaler, scaler_path)
-            print(f"--- {ticker}: 3モデルとスケーラーを保存しました ---")
-
-            lgb_models_dict[ticker] = lgb_model; xgb_models_dict[ticker] = xgb_model
-            cat_models_dict[ticker] = cat_model; scalers_dict[ticker] = scaler
-
-        except Exception as e:
-            print(f"--- {ticker} の学習中にエラーが発生: {e} ---")
-            continue
-    else:
-        print(f"--- {ticker}: 既存の最新モデルを読み込みます。 ---")
-        try:
-            lgb_models_dict[ticker] = joblib.load(lgb_path)
-            xgb_models_dict[ticker] = joblib.load(xgb_path)
-            cat_models_dict[ticker] = joblib.load(cat_path)
-            scalers_dict[ticker] = joblib.load(scaler_path)
-        except Exception as e:
-            print(f"--- {ticker} のモデル読み込み中にエラー: {e} ---")
+    print(f"\n--- {ticker} のモデルを処理しています... ---")
+    try:
+        updater = ModelUpdater(ticker) # tickerごとにインスタンスを作成
+        if updater.run_updates():      # 更新処理を実行
+            updater.load_all_models()  # 最終的に全てのモデルをロード
+    except Exception as e:
+        print(f"--- {ticker} の処理中に致命的なエラーが発生: {e} ---")
+        continue
 
 print("\n全ティッカーのモデル準備が完了しました。")
-print(f"ロード済みモデル数: LightGBM({len(lgb_models_dict)}), XGBoost({len(xgb_models_dict)}), CatBoost({len(cat_models_dict)})")
+print(f"ロード済みモデル数: LightGBM({len(lgb_models_dict)}), XGBoost({len(xgb_models_dict)}), CatBoost({len(cat_models_dict)}), TabNet({len(tabnet_models_dict)}), NGBoost({len(ngb_models_dict)})")
 
 # ==============================================================================
 # 5. シミュレーションの実行 (アンサンブル予測)
@@ -369,21 +478,31 @@ simulation_results = []
 initial_investment = 2000000; leverage = 1; stop_loss_threshold = 0.3
 
 for ticker in ticker_symbols:
+    # ★ NGBoost 変更点 9: NGBoostのモデルも存在するかチェック
     data_exists = ticker in ticker_data_dict and not ticker_data_dict[ticker].empty
-    models_exist = all(ticker in d for d in [lgb_models_dict, xgb_models_dict, cat_models_dict, scalers_dict])
+    models_exist = all(ticker in d for d in [lgb_models_dict, xgb_models_dict, cat_models_dict, tabnet_models_dict, ngb_models_dict, scalers_dict])
 
     if not (data_exists and models_exist):
         continue
 
     df_price = ticker_data_dict[ticker]
-    lgb_model, xgb_model, cat_model = lgb_models_dict[ticker], xgb_models_dict[ticker], cat_models_dict[ticker]
+    # ★ NGBoost 変更点 10: ngb_modelも辞書から取り出す
+    lgb_model, xgb_model, cat_model, tabnet_model, ngb_model = lgb_models_dict[ticker], xgb_models_dict[ticker], cat_models_dict[ticker], tabnet_models_dict[ticker], ngb_models_dict[ticker]
     scaler = scalers_dict[ticker]
     
     X_sim, _, _, indices_sim = create_combined_features(df_price, lookback_days=lookback_days, deal_term=deal_term)
     if len(X_sim) == 0: continue
     
     X_sim_scaled = scaler.transform(X_sim)
-    pred_probs = (lgb_model.predict_proba(X_sim_scaled)[:, 1] + xgb_model.predict_proba(X_sim_scaled)[:, 1] + cat_model.predict_proba(X_sim_scaled)[:, 1]) / 3.0
+    
+    # ★ NGBoost 変更点 11: NGBoostの予測確率を加えて5モデルの平均を取る
+    pred_probs_lgb = lgb_model.predict_proba(X_sim_scaled)[:, 1]
+    pred_probs_xgb = xgb_model.predict_proba(X_sim_scaled)[:, 1]
+    pred_probs_cat = cat_model.predict_proba(X_sim_scaled)[:, 1]
+    pred_probs_tabnet = tabnet_model.predict_proba(X_sim_scaled.astype(np.float32))[:, 1]
+    pred_probs_ngb = ngb_model.predict_proba(X_sim_scaled)[:, 1]
+
+    pred_probs = (pred_probs_lgb + pred_probs_xgb + pred_probs_cat + pred_probs_tabnet + pred_probs_ngb) / 5.0
     
     sim_count = max(1, int(len(X_sim) * 0.1))
     next_trade_available_idx = 0 
@@ -409,7 +528,7 @@ for ticker in ticker_symbols:
             next_trade_available_idx = sample_idx + deal_term
 
 df_simulation = pd.DataFrame(simulation_results)
-simulation_file_name = f"./分析/simulation_results_ensemble_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+simulation_file_name = f"./分析/simulation_results_ensemble_5models_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 if not df_simulation.empty:
     df_simulation.to_excel(simulation_file_name, index=False)
     print(f"\nシミュレーション結果が '{simulation_file_name}' に保存されました。")
@@ -449,386 +568,116 @@ if not df_simulation.empty:
     
     win_rate = (winning_trades / total_trades) * 100 if total_trades > 0 else 0
     df_portfolio_progression = pd.DataFrame(portfolio_progression)
-    trade_log_file_name = f"./分析/trade_log_max3_ensemble_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; df_portfolio_progression.to_excel(trade_log_file_name, index=False)
+    trade_log_file_name = f"./分析/trade_log_max3_ensemble_5models_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; df_portfolio_progression.to_excel(trade_log_file_name, index=False)
     
     df_simulation["Date"] = pd.to_datetime(df_simulation["Simulation Date"]); df_simulation["Weekday"] = df_simulation["Date"].dt.dayofweek
     weekday_stats = df_simulation.groupby("Weekday").apply(lambda x: pd.Series({"勝利数": (x["Profit/Loss (JPY)"] > 0).sum(), "取引数": len(x), "勝率": (x["Profit/Loss (JPY)"] > 0).mean()})).reset_index()
     weekday_stats["曜日"] = weekday_stats["Weekday"].map({0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"})
-    weekday_winrates_output_file = f"./分析/weekday_winrates_ensemble_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; weekday_stats[["曜日", "勝利数", "取引数", "勝率"]].to_excel(weekday_winrates_output_file, index=False)
+    weekday_winrates_output_file = f"./分析/weekday_winrates_ensemble_5models_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; weekday_stats[["曜日", "勝利数", "取引数", "勝率"]].to_excel(weekday_winrates_output_file, index=False)
     
     ticker_stats = df_simulation.groupby("Ticker").apply(lambda x: pd.Series({"勝利数": (x["Profit/Loss (JPY)"] > 0).sum(), "取引数": len(x), "勝率": (x["Profit/Loss (JPY)"] > 0).mean()})).reset_index()
     ticker_stats["Company Name"] = ticker_stats["Ticker"].apply(get_company_name)
-    ticker_winrates_output_file = f"./分析/ticker_winrates_ensemble_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; ticker_stats[["Ticker", "Company Name", "勝利数", "取引数", "勝率"]].to_excel(ticker_winrates_output_file, index=False)
+    ticker_winrates_output_file = f"./分析/ticker_winrates_ensemble_5models_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; ticker_stats[["Ticker", "Company Name", "勝利数", "取引数", "勝率"]].to_excel(ticker_winrates_output_file, index=False)
+
 
 # ==============================================================================
 # ▼▼▼ 7. 今日の予測と推奨銘柄のリストアップ（修正済みのセクション） ▼▼▼
 # ==============================================================================
-
-
 def get_daily_ohlc_from_hourly(ticker, period="10y"):
-    """
-    指定ティッカーの1時間足データを取得し、日足の「始値」「高値」「安値」「終値」を持つ DataFrame を返す関数。
-    処理前後にログを出力します。
-    """
-    # 1. 1時間足データをダウンロード
     df_hourly = yf.download(ticker, period=period, interval="1h", progress=False)
     if df_hourly.empty:
         print(f"  {ticker}: 1時間足データ取得できず。")
         return pd.DataFrame(columns=["Open", "High", "Low", "Close"], dtype=float)
-
-    # リサンプリング前の直近25本を表示
-    print("=" * 50)
-    print(f"[{ticker}] リサンプリング前（直近 25 本の 1 時間足）")
-    print(df_hourly.tail(25))
-    print("=" * 50)
-
-    # 2. 日足のOHLCをリサンプリング
-    df_hourly = df_hourly.sort_index()  # 時系列ソート
-    daily_open  = df_hourly['Open'].resample('D').first()
-    daily_high  = df_hourly['High'].resample('D').max()
-    daily_low   = df_hourly['Low'].resample('D').min()
-    daily_close = df_hourly['Close'].resample('D').last()
-
-    df_daily = pd.concat(
-        [daily_open, daily_high, daily_low, daily_close],
-        axis=1,
-        keys=['Open', 'High', 'Low', 'Close']
-    ).dropna()
-
-    # リサンプリング後の直近5日を表示
-    print(f"[{ticker}] リサンプリング後（日足 OHLC）")
-    print(df_daily.tail(1005))
-    print("=" * 50)
-
+    print("=" * 50); print(f"[{ticker}] リサンプリング前（直近 25 本の 1 時間足）"); print(df_hourly.tail(25)); print("=" * 50)
+    df_hourly = df_hourly.sort_index()
+    daily_open = df_hourly['Open'].resample('D').first(); daily_high = df_hourly['High'].resample('D').max()
+    daily_low = df_hourly['Low'].resample('D').min(); daily_close = df_hourly['Close'].resample('D').last()
+    df_daily = pd.concat([daily_open, daily_high, daily_low, daily_close], axis=1, keys=['Open', 'High', 'Low', 'Close']).dropna()
+    print(f"[{ticker}] リサンプリング後（日足 OHLC）"); print(df_daily.tail(1005)); print("=" * 50)
     return df_daily
 
-
-from zoneinfo import ZoneInfo
-
 def get_market_threshold_time():
-    """
-    市場の取引開始時刻（閾値）を自動で返す関数です。
-    ここでは、例として米国東部時間のマーケットを想定し、
-    夏時間（DST）が適用されている場合は06:00、そうでなければ07:00を返します。
-    """
-    # 対象のマーケットの現地タイムゾーンを指定
-    market_tz = ZoneInfo("America/New_York")
-    now_market = datetime.now(market_tz)
-    
-    # DSTが適用されているかどうかで閾値を設定
-    if now_market.dst() != timedelta(0):
-        # 夏時間の場合
-        threshold = dtime(22, 31, 0)
-    else:
-        # 冬時間の場合
-        threshold = dtime(23, 31, 0)
-    
-    return threshold
+    market_tz = ZoneInfo("America/New_York"); now_market = datetime.now(market_tz)
+    return dtime(22, 31, 0) if now_market.dst() != timedelta(0) else dtime(23, 31, 0)
 
-# def create_features_for_today():
-#     """
-#     1) ティッカーごとに1時間足DL → 日足の終値を作成 (get_daily_close_from_hourly)
-#     2) 最後に(銘柄数, lookback_days-1)の形で特徴量を返す
-#     3) 併せて「利用できる銘柄のリスト」も返す
-#     """
-#     features = []
-#     tickers_list_today = []
-
-#     for ticker in ticker_symbols:
-#         print(f"\n[INFO] 1時間足データダウンロード → 日足リサンプリング → {ticker}")
-#         df_daily = get_daily_close_from_hourly(ticker, period="3mo")
-
-#         # データがない場合はスキップ
-#         if df_daily.empty:
-#             continue
-        
-#         print("当日分(未確定)削除前")
-#         print("="*50)
-#         print(df_daily.tail(3))
-   
-
-#         # 今日の日付と午前7時以降の条件をチェックして行を削除
-#         if len(df_daily) > 0:
-#             print("チャートデータ：", df_daily.index[-1].date())
-#             print("現在：", now.date())
-#             print("現在：", now.time() )
-#             print("閾時間：", get_market_threshold_time())
-#             # 最新データの取引日を求めるため、7時間戻す
-#             threshold = get_market_threshold_time()
-
-#             # 現在時刻が07:00以降かつ、最新行の実際の取引日が今日の場合は、最後の行を除外する
-#             if now.time() >= threshold and df_daily.index[-1].date() == now.date():
-#                 print("="*50)
-#                 print("="*50)
-#                 print("="*50)
-#                 print("  当日分(未確定)を削除")
-#                 df_daily = df_daily.iloc[:-1]
-#                 print("="*50)
-#                 print("="*50)
-#                 print("="*50)
-
-#         print("当日分(未確定)削除後")
-#         print(df_daily.tail(3))
-        
-#         # 欠損除去
-#         df_daily = df_daily.dropna()
-
-#         # 30日分足りないならスキップ
-#         if len(df_daily) < lookback_days:
-#             print(f"  {ticker}: 過去{lookback_days}日分のデータがありません。スキップ。")
-#             continue
-
-#         # 過去30日分の終値を取り出し、pct_change() → (29,) のリターンベクトル
-#         df_lookback = df_daily.iloc[-lookback_days:]
-#         x = df_lookback.pct_change().dropna().values  # shape->(29,)
-
-#         if len(x) != lookback_days - 1:
-#             print(f"  {ticker}: リターン数が {len(x)} 個しかないためスキップ。")
-#             continue
-
-#         # 2次元化 => shape (1, 29)
-#         x_2d = x.reshape(1, -1)
-
-#         features.append(x_2d)
-#         tickers_list_today.append(ticker)
-
-#     # 全部終わったら、(銘柄数, 29) の形にまとめて返す
-#     if len(features) == 0:
-#         print("[INFO] No valid ticker data to create features.")
-#         X_today = np.empty((0, lookback_days - 1))
-#     else:
-#         X_today = np.vstack(features)
-
-#     return X_today, tickers_list_today
-
-
-import requests
-from bs4 import BeautifulSoup
-
-def get_japanese_name(ticker: str) -> str:
-    """
-    yfinance のティッカー（例: '7203.T'）から
-    Yahoo!ファイナンス日本版のページタイトルを解析し、
-    日本語の会社名を返します。
-    """
-    url = f"https://finance.yahoo.co.jp/quote/{ticker}"
-    resp = requests.get(url, timeout=5)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "lxml")
-    title = soup.title.string  # 例: "トヨタ自動車(7203.T) : 株価｜株式 - Yahoo!ファイナンス"
-    # 「(ティッカー」で分割して前半を会社名とみなす
-    name = title.split("(")[0].strip()
-    return name
-
-
-# def get_us_company_name_by_scrape(ticker: str) -> str:
-#     """
-#     Yahoo! Finance（米国版）のページタイトルを解析して
-#     英語の会社名を返す。
-#     URL例: https://finance.yahoo.com/quote/AAPL
-#     """
-#     url = f"https://finance.yahoo.com/quote/{ticker}"
-#     resp = requests.get(url, timeout=5)
-#     resp.raise_for_status()
-#     soup = BeautifulSoup(resp.text, "lxml")
-#     title = soup.title.string
-#     # タイトル例: "Apple Inc. (AAPL) Stock Price, News, Quote & History - Yahoo Finance"
-#     # 「 (ティッカー」で分割して前半を会社名とみなす
-#     name = title.split(f" ({ticker})")[0].strip()
-#     return name
-
-
-
-def create_features_for_today_combined(ticker_symbols,
-                                       lookback_days=25,
-                                       deal_term=5):
-    """
-    1) ティッカーごとに1時間足→日足リサンプリング
-    2) 過去 lookback_days 日のリターン (pct_change→(lookback_days-1,))
-    3) prepare_features_2 で df_extra を計算 (全日分)
-    4) 最終日に対応する df_extra.loc[last_date] を取り出して結合
-    5) (銘柄数, (lookback_days-1)+n_extra) の X_today と
-       利用可能ティッカーリストを返す
-    """
-    X_rows = []
-    tickers_ok = []
-
+def create_features_for_today_combined(ticker_symbols, lookback_days=25, deal_term=5):
+    X_rows, tickers_ok = [], []
     for ticker in ticker_symbols:
         print(f"[INFO] Processing {ticker}...")
         df_daily = get_daily_ohlc_from_hourly(ticker, period="2y")
-        if df_daily.empty:
-            continue
-        # MultiIndex の第０レベルを落とす
-        df_daily.columns = df_daily.columns.droplevel('Ticker')
-
-        # 確認
-        print(df_daily.columns)
-        df_extra = prepare_features_2(df_daily,
-                num_1=59,
-                num_2=10,
-                conversion_period=2,
-                base_period=7,
-                span_b_period=45,
-                displacement=22,
-                calc_bars=60,
-                bars_to_render=10,
-                harmonic_period=10
-            )
-
-        #―― 未確定当日分の削除ロジックはお手持ちのものをそのまま――
-        # 省略...
+        if df_daily.empty: continue
+        if isinstance(df_daily.columns, pd.MultiIndex) and 'Ticker' in df_daily.columns.names:
+            df_daily.columns = df_daily.columns.droplevel('Ticker')
+        df_extra = prepare_features_2(df_daily, num_1=59, num_2=10, conversion_period=2, base_period=7, span_b_period=45, displacement=22, calc_bars=60, bars_to_render=10, harmonic_period=10)
         df_daily = df_daily.dropna()
-        if len(df_daily) < lookback_days:
-            continue
-        # print(df_daily.colums)
-        # (1) 過去 lookback_days 日の終値でリターンベクトル
-        window = df_daily['Open'].iloc[-lookback_days:]
-        returns = window.pct_change().dropna().values
-        if len(returns) != lookback_days - 1:
-            continue
-        # returns: shape=(lookback_days-1,)
-
-        # (2) prepare_features_2 で追加特徴量 DataFrame を一度だけ計算
-        #     ※内部で 'Close'→'close' リネームを済ませておいてください
-
+        if len(df_daily) < lookback_days: continue
+        window = df_daily['Open'].iloc[-lookback_days:]; returns = window.pct_change().dropna().values
+        if len(returns) != lookback_days - 1: continue
         n_extra = df_extra.shape[1]
-
-        # (3) 最終日インデックスを取得
         last_dt = df_daily.index[-1]
-        if last_dt in df_extra.index:
-            extra = df_extra.loc[last_dt].values
-        else:
-            extra = np.zeros(n_extra, dtype=float)
-
-        # (4) ドッキング
-        combined = np.hstack([returns, extra])  # shape=(lookback_days-1 + n_extra,)
-
-        X_rows.append(combined)
-        tickers_ok.append(ticker)
-
-    # (5) テーブル化
-    if X_rows:
-        X_today = np.vstack(X_rows)
-    else:
-        X_today = np.empty((0, lookback_days - 1 + n_extra))
-
+        extra = df_extra.loc[last_dt].values if last_dt in df_extra.index else np.zeros(n_extra, dtype=float)
+        combined = np.hstack([returns, extra])
+        X_rows.append(combined); tickers_ok.append(ticker)
+    if X_rows: X_today = np.vstack(X_rows)
+    else: X_today = np.empty((0, lookback_days - 1 + n_extra if 'n_extra' in locals() else lookback_days - 1))
     return X_today, tickers_ok
 
 # --- 今日の特徴量作成 ---
-# X_today, tickers_today = create_features_for_today()
-X_today, tickers_today = create_features_for_today_combined(ticker_symbols,
-                                       lookback_days=25,
-                                       deal_term=5)
-print(f"\n最終的な X_today.shape = {X_today.shape}")
-print(f"銘柄数 = {len(tickers_today)}")
-
-# --- 各ティッカーのモデルを用いて本日の予測確率を算出 --
-
-
-
+X_today, tickers_today = create_features_for_today_combined(ticker_symbols, lookback_days=25, deal_term=5)
+print(f"\n最終的な X_today.shape = {X_today.shape}"); print(f"銘柄数 = {len(tickers_today)}")
 
 # --- 各ティッカーのモデルを用いて本日の予測確率を算出 ---
 predictions = []
 if len(X_today) > 0:
     for ticker, feature_vector in zip(tickers_today, X_today):
-        if all(ticker in d for d in [lgb_models_dict, xgb_models_dict, cat_models_dict, scalers_dict]):
+        # ★ NGBoost 変更点 12: NGBoostのモデル辞書もチェック
+        if all(ticker in d for d in [lgb_models_dict, xgb_models_dict, cat_models_dict, tabnet_models_dict, ngb_models_dict, scalers_dict]):
             scaler = scalers_dict[ticker]
-            lgb_model, xgb_model, cat_model = lgb_models_dict[ticker], xgb_models_dict[ticker], cat_models_dict[ticker]
-            x_scaled = scaler.transform(feature_vector.reshape(1, -1))
+            # ★ NGBoost 変更点 13: ngb_modelも辞書から取り出す
+            lgb_model, xgb_model, cat_model, tabnet_model, ngb_model = lgb_models_dict[ticker], xgb_models_dict[ticker], cat_models_dict[ticker], tabnet_models_dict[ticker], ngb_models_dict[ticker]
+            
+            x_today_vec = feature_vector.reshape(1, -1)
+            x_scaled = scaler.transform(x_today_vec)
+            
             prob_lgb = lgb_model.predict_proba(x_scaled)[0, 1]
             prob_xgb = xgb_model.predict_proba(x_scaled)[0, 1]
             prob_cat = cat_model.predict_proba(x_scaled)[0, 1]
-            prob = (prob_lgb + prob_xgb + prob_cat) / 3.0
+            prob_tabnet = tabnet_model.predict_proba(x_scaled.astype(np.float32))[0, 1]
+            # ★ NGBoost 変更点 14: NGBoostで予測
+            prob_ngb = ngb_model.predict_proba(x_scaled)[0, 1]
+            
+            # ★ NGBoost 変更点 15: 5モデルの平均を計算
+            prob = (prob_lgb + prob_xgb + prob_cat + prob_tabnet + prob_ngb) / 5.0
             predictions.append({"Ticker": ticker, "Probability": prob})
 
-
-
-
-
+# (以降の推奨銘柄リストアップ、メール送信部分は変更なし)
 today_data = pd.DataFrame(predictions).sort_values("Probability", ascending=False)
-
-# 予測確率の降順にソート（必要なら重複処理も可能）
 recommendation_data = today_data.sort_values(by="Probability", ascending=False)
-print("本日の各ティッカー別予測結果:")
-print(recommendation_data)
-
-# --- 購入推奨銘柄の算出 ---
-# 以下は例として、上位3件、5件、6件の推奨銘柄リストを作成する例です。
-purchase_recommendations_top3 = []
-purchase_recommendations_top5 = []
-purchase_recommendations_top6 = []
-
-# エグジット日付の計算
-end_date = datetime.now()
-from pandas.tseries.offsets import BusinessDay
-exit_date = end_date + BusinessDay(deal_term)
+print("本日の各ティッカー別予測結果:"); print(recommendation_data)
+purchase_recommendations_top3, purchase_recommendations_top5, purchase_recommendations_top6 = [], [], []
+end_date = datetime.now(); exit_date = end_date + BusinessDay(deal_term)
 print("Exit Date (deal_term 営業日後):", exit_date)
-
 for top_n, purchase_recommendations in [(3, purchase_recommendations_top3), (15, purchase_recommendations_top5), (6, purchase_recommendations_top6)]:
     top_stocks_rec = recommendation_data.head(top_n)
     for idx, row in top_stocks_rec.iterrows():
-        ticker_ = row["Ticker"]
-        company_name = get_company_name(ticker_)
+        ticker_ = row["Ticker"]; company_name = get_company_name(ticker_)
         try:
-            # data[ticker_]は各ティッカーの日足終値Series（もしくはDataFrame）の辞書
-            # 終値をスカラーに変換する
-            start_price = float(data[ticker_]["Open"].iloc[-1])
-            trade_amount = initial_investment / top_n
-            position_size = trade_amount
-            stop_loss_price = (1 - stop_loss_threshold) * start_price
-            stop_loss_amount = stop_loss_threshold * start_price
-
-            number_of_shares = position_size // start_price
-            if number_of_shares == 0:
-                continue
+            start_price = float(data[ticker_]["Open"].iloc[-1]); trade_amount = initial_investment / top_n
+            position_size = trade_amount; stop_loss_price = (1 - stop_loss_threshold) * start_price
+            stop_loss_amount = stop_loss_threshold * start_price; number_of_shares = position_size // start_price
+            if number_of_shares == 0: continue
             actual_investment = number_of_shares * start_price
-
-            purchase_recommendations.append({
-                "Entry Date": end_date.strftime('%Y-%m-%d'),
-                "Exit Date": exit_date.strftime('%Y-%m-%d'),
-                "Term (Business Days)": deal_term,
-                "Ticker": ticker_,
-                "Company Name": company_name,
-                "Current Price": start_price,
-                "Stop Loss Amount": stop_loss_amount * int(number_of_shares),
-                "Stop Loss Price": stop_loss_price,
-                "Shares Bought": int(number_of_shares),
-                "Investment per Stock (JPY)": round(actual_investment, 2),
-                "Predicted Probability (%)": round(row["Probability"] * 100, 2)
-            })
-        except Exception as e:
-            print(f"{ticker_}: エラーが発生しました。", e)
-            continue
-
-columns_order = ["Entry Date", "Exit Date", "Term (Business Days)", "Ticker", "Company Name",
-                 "Current Price", "Shares Bought", "Stop Loss Amount", "Stop Loss Price", "Investment per Stock (JPY)",
-                 "Predicted Probability (%)"]
-
+            purchase_recommendations.append({"Entry Date": end_date.strftime('%Y-%m-%d'), "Exit Date": exit_date.strftime('%Y-%m-%d'), "Term (Business Days)": deal_term, "Ticker": ticker_, "Company Name": company_name, "Current Price": start_price, "Stop Loss Amount": stop_loss_amount * int(number_of_shares), "Stop Loss Price": stop_loss_price, "Shares Bought": int(number_of_shares), "Investment per Stock (JPY)": round(actual_investment, 2), "Predicted Probability (%)": round(row["Probability"] * 100, 2)})
+        except Exception as e: print(f"{ticker_}: エラーが発生しました。", e); continue
+columns_order = ["Entry Date", "Exit Date", "Term (Business Days)", "Ticker", "Company Name", "Current Price", "Shares Bought", "Stop Loss Amount", "Stop Loss Price", "Investment per Stock (JPY)", "Predicted Probability (%)"]
 purchase_df_top3 = pd.DataFrame(purchase_recommendations_top3)[columns_order] if purchase_recommendations_top3 else pd.DataFrame(columns=columns_order)
 purchase_df_top5 = pd.DataFrame(purchase_recommendations_top5)[columns_order] if purchase_recommendations_top5 else pd.DataFrame(columns=columns_order)
 purchase_df_top6 = pd.DataFrame(purchase_recommendations_top6)[columns_order] if purchase_recommendations_top6 else pd.DataFrame(columns=columns_order)
-
-print("\n上位3件の購入推奨銘柄:")
-print(purchase_df_top3)
-
-print("\n上位5件の購入推奨銘柄:")
-print(purchase_df_top5)
-
-print("\n上位6件の購入推奨銘柄:")
-print(purchase_df_top6)
-
+print("\n上位3件の購入推奨銘柄:"); print(purchase_df_top3); print("\n上位15件の購入推奨銘柄:"); print(purchase_df_top5); print("\n上位6件の購入推奨銘柄:"); print(purchase_df_top6)
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-file_name_top3 = f"./分析/過去25日間_銘柄選定結果_15_top3_{timestamp}.xlsx"
-file_name_top5 = f"./分析/過去25日間_銘柄選定結果_15_top5_{timestamp}.xlsx"
-file_name_top6 = f"./分析/過去25日間_銘柄選定結果_15_top6_{timestamp}.xlsx"
-purchase_df_top3.to_excel(file_name_top3, index=False)
-purchase_df_top5.to_excel(file_name_top5, index=False)
-purchase_df_top6.to_excel(file_name_top6, index=False)
-print("\n購入リストが以下のファイルに保存されました。")
-print(f" - {file_name_top3}")
-print(f" - {file_name_top5}")
-print(f" - {file_name_top6}")
-
+file_name_top3 = f"./分析/5models_top3_{timestamp}.xlsx"; file_name_top5 = f"./分析/5models_top5_{timestamp}.xlsx"; file_name_top6 = f"./分析/5models_top6_{timestamp}.xlsx"
+purchase_df_top3.to_excel(file_name_top3, index=False); purchase_df_top5.to_excel(file_name_top5, index=False); purchase_df_top6.to_excel(file_name_top6, index=False)
+print("\n購入リストが以下のファイルに保存されました。"); print(f" - {file_name_top3}"); print(f" - {file_name_top5}"); print(f" - {file_name_top6}")
 
 
 
@@ -1193,7 +1042,7 @@ try:
         msg = MIMEMultipart("related")
         msg["From"] = GMAIL_USER
         msg["To"] = recipient
-        msg["Subject"] = f"日本v3 ETF上位(TOP50件)） アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
+        msg["Subject"] = f"ETFv3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
 
         # HTML本文を作成
         body_html = f"""
