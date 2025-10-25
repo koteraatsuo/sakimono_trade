@@ -41,8 +41,9 @@ def exe_sakimono_scripts():
     conda_env = "py310_fx"
     scripts_list = [
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_commodity_load.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_kasoutuka_load.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_commodity_before.py"),
-        # ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_gold.py"),     
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_kasoutuka_before.py"),     
     ]
 
     activate_command = f"conda activate {conda_env}"
