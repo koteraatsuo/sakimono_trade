@@ -40,9 +40,9 @@ def exe_sakimono_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
     scripts_list = [
-        # ("C:/workspace/sakimono_trade", "Sakimono_ver1.12_silver_open_short.11_short.py"),
-        ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_Metals.py"),
-        ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_gold.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_commodity_load.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_commodity_before.py"),
+        # ("C:/workspace/sakimono_trade", "Sakimono_ver1.13_open_gold.py"),     
     ]
 
     activate_command = f"conda activate {conda_env}"
@@ -423,6 +423,7 @@ schedule.every().day.at("05:00").do(lambda: schedule_job("japanese_before"))
 schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:00").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:00").do(lambda: schedule_job("metal"))
+schedule.every().day.at("08:01").do(lambda: schedule_job("sakimono"))
 schedule.every().day.at("22:31").do(lambda: schedule_job("cocoa_coffee"))
 schedule.every().day.at("18:30").do(lambda: schedule_job("before_cfd"))
 schedule.every().day.at("22:30").do(lambda: schedule_job("cfd"))
