@@ -420,7 +420,7 @@ def schedule_job(script_type):
 # 平日（月～金）は07:30に「other」スクリプト、16:15に「japanese」スクリプトを実行
 # schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 
-schedule.every().day.at("05:00").do(lambda: schedule_job("japanese_before"))
+schedule.every().day.at("01:00").do(lambda: schedule_job("japanese_before"))
 schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("09:00").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:00").do(lambda: schedule_job("metal"))
