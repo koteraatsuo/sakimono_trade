@@ -8,6 +8,7 @@ def exe_japanese_stocks():
     # 日本株スクリプトのみ実行
     conda_env = "py310_fx"
     scripts_list = [
+        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40_1day_paralel_v2.py"),        
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40_1day_v3.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40_1day.py"),
         ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40_2day.py"),
