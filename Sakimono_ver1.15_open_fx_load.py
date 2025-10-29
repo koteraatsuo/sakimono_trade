@@ -710,6 +710,7 @@ def run_simulation_for_ticker(args):
         traceback.print_exc()
         return [] # エラー時も空リストを返す
 
+
 def generate_advanced_chart(ticker, save_path, period="5d", interval="15m"):
     """
     高度なチャートを生成する関数
@@ -1014,64 +1015,23 @@ import urllib.parse
 
 # TradingViewリンク生成関数
 def to_tradingview_link(ticker: str) -> str:
+    if ticker.endswith(".T"):
+        code = ticker.replace(".T", "")
+        url = (
+            f"https://www.tradingview.com/chart/"
+            f"?symbol=TSE:{code}"
+            f"&interval=D"
+            f"&chartType=1"
+        )
+    else:
+        url = (
+            f"https://www.tradingview.com/chart/"
+            f"?symbol={ticker}"
+            f"&interval=D"
+            f"&chartType=1"
+        )
+    return f'<a href="{url}" target="_blank">{ticker}</a>'
 
-    """
-    Yahoo FinanceのティッカーをTradingViewのURLシンボル形式に変換し、
-    HTMLリンクを生成する。
-
-    【変換ルール】
-    - FX ("EURUSD=X")      -> "EURUSD"
-    - 先物 ("GC=F")        -> "GC1!" (一般的な先物形式への推測)
-    - 仮想通貨 ("BTC-USD") -> "BTCUSD"
-    - 日本株 ("1802.T")    -> "TSE:1802"
-    - 指数 ("^N225")      -> "NI225" (よく使われるシンボルへの変換)
-    - その他 (米国株など)  -> そのまま
-    """
-    # 万が一、文字列以外のデータが来た場合のエラー回避
-    if not isinstance(ticker, str):
-        return str(ticker)
-
-    # リンクに表示するテキストは、元のYahooティッカーのままにする
-    display_text = ticker
-    # URL用に変換するシンボルを準備
-    symbol = ticker
-
-    # --- ルールに基づいてシンボルを変換 ---
-    # 1. FX (末尾が =X)
-    if ticker.endswith("=X"):
-        symbol = ticker.replace("=X", "")
-    
-    # 2. コモディティ・株価指数の先物 (末尾が =F)
-    elif ticker.endswith("=F"):
-        # TradingViewでは限月を指定する '1!' などを付けるのが一般的
-        symbol = ticker.replace("=F", "") + "1!"
-
-    # 3. 仮想通貨 (ハイフンを含む)
-    elif "-" in ticker and any(cur in ticker for cur in ["USD", "JPY", "EUR"]):
-        symbol = ticker.replace("-", "")
-
-    # 4. 日本株 (末尾が .T)
-    elif ticker.endswith(".T"):
-        symbol = f"TSE:{ticker.replace('.T', '')}"
-
-    # 5. 主要な指数 (先頭が ^)
-    elif ticker.startswith("^"):
-        # 主要な指数のシンボルをマッピング
-        index_map = {
-            "^N225": "NI225",
-            "^GSPC": "SPX",
-            "^DJI": "DJI",
-            "^IXIC": "IXIC",
-        }
-        # マップに存在すれば変換し、なければ先頭の'^'を削除するだけ
-        symbol = index_map.get(ticker, ticker.replace("^", ""))
-
-    # --- URLを生成 ---
-    # シンボルをURLエンコードして、安全なURLを作成
-    encoded_symbol = urllib.parse.quote(symbol)
-    url = f"https://www.tradingview.com/chart/?symbol={encoded_symbol}"
-
-    return f'<a href="{url}" target="_blank">{display_text}</a>'
 # Wikipediaリンク生成関数（日本語版をimport wikipediaで検索）
 def to_wikipedia_link(company_name: str) -> str:
     try:
@@ -1142,31 +1102,6 @@ def main():
     folder_path = "./分析"; os.makedirs(folder_path, exist_ok=True)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     # ==============================================================================
     # 1. 最新のETFリストファイルを読み込む (CSV/Excel自動判別)
     # ==============================================================================
@@ -1178,12 +1113,12 @@ def main():
         # ./分析 フォルダから対象となるファイルを探す
         candidate_files = [
             os.path.join(folder, f) for f in os.listdir(folder)
-            if (f == "top_30_commodity_by_growth.csv" or  # 元のCSVファイル
-            (f.startswith("top_30_commo") and f.endswith(".xlsx"))) # 新しいExcelファイル
+            if (f == "top_30_fx_by_growth.csv" or  # 元のCSVファイル
+            (f.startswith("etf_top30_") and f.endswith(".xlsx"))) # 新しいExcelファイル
         ]
         
         if not candidate_files:
-            raise FileNotFoundError(f"分析フォルダ内に 'top_30_etfs_btop_30_commodity_by_growthy_growth.csv' または 'top_30_commo*.xlsx' ファイルが見つかりません。")
+            raise FileNotFoundError(f"分析フォルダ内に 'top_30_etfs_by_growth.csv' または 'etf_top30_*.xlsx' ファイルが見つかりません。")
 
         # 更新日時が最も新しいファイルを選択
         latest_file = max(candidate_files, key=os.path.getctime)
@@ -1241,7 +1176,7 @@ def main():
         if not all_data:
             raise ValueError("スコア計算対象の銘柄（1年間の上昇率がプラスのETF）がありませんでした。")
 
-        top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False).head(10)
+        top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False).head(15)
 
         top_ranked["銘柄名"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('銘柄名', 'N/A'))
         top_ranked["カテゴリ"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('カテゴリ', 'N/A'))
@@ -1737,7 +1672,7 @@ def main():
             msg = MIMEMultipart("related")
             msg["From"] = GMAIL_USER
             msg["To"] = recipient
-            msg["Subject"] = f"商品v3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
+            msg["Subject"] = f"FXv3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
 
             # HTML本文を作成
             body_html = f"""

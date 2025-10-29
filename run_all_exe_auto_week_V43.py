@@ -27,6 +27,7 @@ def exe_japanese_stocks():
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_load_sim.py"),
     ]
 
+
     activate_command = f"conda activate {conda_env}"
     for folder, script in scripts_list:
         try:
@@ -209,34 +210,15 @@ def exe_every_6hour_sendmail_scripts():
             print(f"Error running {script} in {folder}: {e}")
 
 
-def exe_fx_scripts():
-    # fxスクリプトを実行（今回は土曜日に実行）
-    conda_env = "py310_fx"
-    scripts_list = [
-        ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
-        ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
-        ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_USDJPY_損切_ajust_ver1.19_送信.py"),
-    ]
-
-    activate_command = f"conda activate {conda_env}"
-    for folder, script in scripts_list:
-        try:
-            os.chdir(folder)
-            print(f"Running {script} in {folder}...")
-            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
-            print(f"Finished running {script}.")
-        except Exception as e:
-            print(f"Error running {script} in {folder}: {e}")
-
-
 
 def exe_fx_scripts():
     # fxスクリプトを実行（今回は土曜日に実行）
     conda_env = "py310_fx"
+    
     scripts_list = [
         # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
         # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
-        ("C:/workspace/fx_trade_3", "FX_straight_yen_ver1.12_Fernandes_lev2.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_buy_dell_load.py"),
     ]
 
     activate_command = f"conda activate {conda_env}"
@@ -412,17 +394,17 @@ def schedule_job(script_type):
             exe_cocoa_coffee_scripts()
 
     elif script_type == "fx":
-        if today < 5:
+        if today <= 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
 
     elif script_type == "kasoutuuka":
-        if today < 5:
+        if today <= 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_kasoutuuka_scripts()
 
     elif script_type == "send_mail":
-        if today == 5:
+        if today <= 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_sendmail_scripts()
     elif script_type == "6hour_send_mail":

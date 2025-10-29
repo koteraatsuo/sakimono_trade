@@ -68,6 +68,7 @@ def exe_japanese_before_scripts():
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_commodity_before.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_kasoutuka_before.py"),     
         ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_before.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_ETF_before.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_short.py"),
     ]
@@ -234,10 +235,11 @@ def exe_fx_scripts():
 def exe_fx_scripts():
     # fxスクリプトを実行（今回は土曜日に実行）
     conda_env = "py310_fx"
+    
     scripts_list = [
         # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
         # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
-        ("C:/workspace/fx_trade_3", "FX_straight_yen_ver1.12_Fernandes_lev2.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_buy_dell_load.py"),
     ]
 
     activate_command = f"conda activate {conda_env}"
@@ -413,17 +415,17 @@ def schedule_job(script_type):
             exe_cocoa_coffee_scripts()
 
     elif script_type == "fx":
-        if today < 5:
+        if today <= 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
 
     elif script_type == "kasoutuuka":
-        if today < 5:
+        if today <= 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_kasoutuuka_scripts()
 
     elif script_type == "send_mail":
-        if today == 5:
+        if today <= 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_sendmail_scripts()
     elif script_type == "6hour_send_mail":

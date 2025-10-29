@@ -643,7 +643,7 @@ def run_simulation_for_ticker(args):
 
     local_simulation_results = []
     initial_investment = 2000000
-    leverage = 5
+    leverage = 10
     stop_loss_threshold = 0.3
 
     try:
@@ -709,6 +709,7 @@ def run_simulation_for_ticker(args):
         print(f"--- シミュレーションエラー ({ticker}) ---")
         traceback.print_exc()
         return [] # エラー時も空リストを返す
+
 
 def generate_advanced_chart(ticker, save_path, period="5d", interval="15m"):
     """
@@ -1072,6 +1073,7 @@ def to_tradingview_link(ticker: str) -> str:
     url = f"https://www.tradingview.com/chart/?symbol={encoded_symbol}"
 
     return f'<a href="{url}" target="_blank">{display_text}</a>'
+
 # Wikipediaリンク生成関数（日本語版をimport wikipediaで検索）
 def to_wikipedia_link(company_name: str) -> str:
     try:
@@ -1134,37 +1136,12 @@ def main():
     # ★ 重要な修正: `datetime.datetime`のようにフルパスで指定する
     ONE_MONTH_AGO = datetime.datetime.now() - datetime.timedelta(days=30)
     initial_investment = 2000000
-    leverage = 5
+    leverage = 10
     stop_loss_threshold = 0.3
     
     print(f"最大 {MAX_WORKERS} スレッド/プロセスで並列処理を開始します。")
     load_dotenv()
     folder_path = "./分析"; os.makedirs(folder_path, exist_ok=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     # ==============================================================================
@@ -1178,12 +1155,12 @@ def main():
         # ./分析 フォルダから対象となるファイルを探す
         candidate_files = [
             os.path.join(folder, f) for f in os.listdir(folder)
-            if (f == "top_30_commodity_by_growth.csv" or  # 元のCSVファイル
-            (f.startswith("top_30_commo") and f.endswith(".xlsx"))) # 新しいExcelファイル
+            if (f == "top_30_fx_by_growth.csv" or  # 元のCSVファイル
+            (f.startswith("etf_top30_") and f.endswith(".xlsx"))) # 新しいExcelファイル
         ]
         
         if not candidate_files:
-            raise FileNotFoundError(f"分析フォルダ内に 'top_30_etfs_btop_30_commodity_by_growthy_growth.csv' または 'top_30_commo*.xlsx' ファイルが見つかりません。")
+            raise FileNotFoundError(f"分析フォルダ内に 'top_30_etfs_by_growth.csv' または 'etf_top30_*.xlsx' ファイルが見つかりません。")
 
         # 更新日時が最も新しいファイルを選択
         latest_file = max(candidate_files, key=os.path.getctime)
@@ -1241,7 +1218,7 @@ def main():
         if not all_data:
             raise ValueError("スコア計算対象の銘柄（1年間の上昇率がプラスのETF）がありませんでした。")
 
-        top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False).head(10)
+        top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False).head(15)
 
         top_ranked["銘柄名"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('銘柄名', 'N/A'))
         top_ranked["カテゴリ"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('カテゴリ', 'N/A'))
@@ -1360,49 +1337,116 @@ def main():
         print("\nシミュレーション結果はありませんでした。")
 
 
+
+
     # ==============================================================================
-    # 6. 再投資シミュレーションと結果分析
+    # ▼▼▼ 6. 新しい再投資シミュレーション（ロング・ショート戦略） ▼▼▼
     # ==============================================================================
-    current_portfolio = initial_investment; win_rate = 0.0; df_portfolio_progression = pd.DataFrame()
+    current_portfolio = initial_investment
+    win_rate = 0.0
+    df_portfolio_progression = pd.DataFrame()
+    # 曜日別・銘柄別勝率のファイル名は初期化しておく
     weekday_winrates_output_file, ticker_winrates_output_file = "", ""
 
+    # シミュレーション結果のDataFrameが存在する場合のみ実行
     if not df_simulation.empty:
+        
+        # 日付でソートされた取引日リストを作成
         simulation_dates = sorted(df_simulation["Simulation Date"].unique())
-        portfolio_progression, current_holdings = [], []
-        total_trades, winning_trades = 0, 0
-        MAX_HOLDINGS = 3
+        
+        portfolio_progression = []
+        total_trades = 0
+        winning_trades = 0
+
+        # 1日ずつシミュレーションを進める
         for sim_date in simulation_dates:
-            holdings_after_sell = []
-            for holding in current_holdings:
-                if sim_date >= (holding["enter_date"] + pd.DateOffset(days=deal_term)).date():
-                    total_trades += 1; row = holding["row_data"]
-                    percentage_return = ((row["Exit Price"] - row["Start Price"]) / row["Start Price"]) * leverage if row["Start Price"] > 0 else 0
-                    if percentage_return > 0: winning_trades += 1
-                    current_portfolio *= (1 + (percentage_return / MAX_HOLDINGS))
-                    portfolio_progression.append({"Date": sim_date, "Event": "SELL", "Ticker": row["Ticker"], "Trade Return (%)": percentage_return * 100, "Updated Portfolio": current_portfolio, "Win Rate (%)": (winning_trades / total_trades * 100)})
-                else: holdings_after_sell.append(holding)
-            current_holdings = holdings_after_sell
-            available_slots = MAX_HOLDINGS - len(current_holdings)
-            if available_slots > 0:
-                df_deals = df_simulation[df_simulation["Simulation Date"] == sim_date]
-                df_new_buys = df_deals[~df_deals["Ticker"].isin([h["ticker"] for h in current_holdings])].sort_values(by="Predicted Probability", ascending=False).head(available_slots)
-                for _, row in df_new_buys.iterrows():
-                    current_holdings.append({"enter_date": sim_date, "ticker": row["Ticker"], "row_data": row})
-                    portfolio_progression.append({"Date": sim_date, "Event": "BUY", "Ticker": row["Ticker"], "Trade Return (%)": None, "Updated Portfolio": current_portfolio, "Win Rate (%)": (winning_trades / total_trades * 100) if total_trades > 0 else 0})
+            
+            # その日の取引候補をすべて取得
+            daily_deals = df_simulation[df_simulation["Simulation Date"] == sim_date]
+            
+            # 取引候補が2銘柄未満（買いと売りのペアが作れない）場合はスキップ
+            if len(daily_deals) < 2:
+                continue
+                
+            # --- 買い（ロング）銘柄の選定 ---
+            # 予測確率が最も高い銘柄を選ぶ
+            best_buy = daily_deals.loc[daily_deals['Predicted Probability'].idxmax()]
+            
+            # --- 売り（ショート）銘柄の選定 ---
+            # 予測確率が最も低い銘柄を選ぶ
+            worst_sell = daily_deals.loc[daily_deals['Predicted Probability'].idxmin()]
+            
+            # 万が一、買いと売りの銘柄が同じになってしまったらスキップ
+            if best_buy['Ticker'] == worst_sell['Ticker']:
+                continue
+
+            # --- 損益の計算 ---
+            # 買いポジションの損益は、シミュレーション結果の値をそのまま使える
+            profit_loss_buy = best_buy['Profit/Loss (JPY)']
+
+            # ★★★ 重要なポイント ★★★
+            # 売りポジションの損益は、シミュレーション結果の逆になる
+            # 元のシミュレーションは「買い」を前提としているため、
+            # (終値 - 始値) で計算されている。
+            # 「売り」の場合は (始値 - 終値) なので、符号を反転させるだけで良い。
+            profit_loss_sell = -worst_sell['Profit/Loss (JPY)']
+            
+            # 1回の取引（1ペア）での合計損益
+            total_profit_loss = profit_loss_buy + profit_loss_sell
+            
+            # ポートフォリオを更新
+            current_portfolio += total_profit_loss
+            
+            # 勝率の計算
+            total_trades += 1 # 1ペアの取引で1トレードとカウント
+            if total_profit_loss > 0:
+                winning_trades += 1
+            
+            win_rate = (winning_trades / total_trades) * 100 if total_trades > 0 else 0
+            # ログに記録
+            portfolio_progression.append({
+                "Date": sim_date,
+                "Event": "Long/Short Pair Trade",
+                "Buy Ticker": best_buy['Ticker'],
+                "Buy Probability": round(best_buy['Predicted Probability'], 3),
+                "Sell Ticker": worst_sell['Ticker'],
+                "Sell Probability": round(worst_sell['Predicted Probability'], 3),
+                "Buy P/L (JPY)": round(profit_loss_buy, 2),
+                "Sell P/L (JPY)": round(profit_loss_sell, 2),
+                "Total P/L (JPY)": round(total_profit_loss, 2),
+                "Updated Portfolio": round(current_portfolio, 2),
+                "Win Rate (%)": round(win_rate, 2)
+            })
+            
+
+        # --- 最終結果の集計と保存 ---
         
-        win_rate = (winning_trades / total_trades) * 100 if total_trades > 0 else 0
         df_portfolio_progression = pd.DataFrame(portfolio_progression)
-        trade_log_file_name = f"./分析/trade_log_max3_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; df_portfolio_progression.to_excel(trade_log_file_name, index=False)
         
-        df_simulation["Date"] = pd.to_datetime(df_simulation["Simulation Date"]); df_simulation["Weekday"] = df_simulation["Date"].dt.dayofweek
+        # ログファイル名を生成して保存
+        trade_log_file_name = f"./分析/trade_log_long_short_ensemble_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        df_portfolio_progression.to_excel(trade_log_file_name, index=False)
+        
+        print("\nロング・ショート戦略のシミュレーション結果:")
+        print(df_portfolio_progression.tail())
+        print(f"\n最終ポートフォリオ: {int(current_portfolio):,} 円")
+        print(f"勝率: {win_rate:.2f} %")
+
+        # -------------------------------------------------------------
+        # 曜日別・銘柄別勝率の分析は、元のロジックを流用できます
+        # ただし、ここでは「買い」ポジションの勝率のみを分析対象とします
+        # -------------------------------------------------------------
+        df_simulation["Date"] = pd.to_datetime(df_simulation["Simulation Date"])
+        df_simulation["Weekday"] = df_simulation["Date"].dt.dayofweek
         weekday_stats = df_simulation.groupby("Weekday").apply(lambda x: pd.Series({"勝利数": (x["Profit/Loss (JPY)"] > 0).sum(), "取引数": len(x), "勝率": (x["Profit/Loss (JPY)"] > 0).mean()})).reset_index()
         weekday_stats["曜日"] = weekday_stats["Weekday"].map({0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"})
-        weekday_winrates_output_file = f"./分析/weekday_winrates_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; weekday_stats[["曜日", "勝利数", "取引数", "勝率"]].to_excel(weekday_winrates_output_file, index=False)
+        weekday_winrates_output_file = f"./分析/weekday_winrates_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        weekday_stats[["曜日", "勝利数", "取引数", "勝率"]].to_excel(weekday_winrates_output_file, index=False)
         
         ticker_stats = df_simulation.groupby("Ticker").apply(lambda x: pd.Series({"勝利数": (x["Profit/Loss (JPY)"] > 0).sum(), "取引数": len(x), "勝率": (x["Profit/Loss (JPY)"] > 0).mean()})).reset_index()
         ticker_stats["Company Name"] = ticker_stats["Ticker"].apply(get_company_name)
-        ticker_winrates_output_file = f"./分析/ticker_winrates_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; ticker_stats[["Ticker", "Company Name", "勝利数", "取引数", "勝率"]].to_excel(ticker_winrates_output_file, index=False)
-
+        ticker_winrates_output_file = f"./分析/ticker_winrates_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        ticker_stats[["Ticker", "Company Name", "勝利数", "取引数", "勝率"]].to_excel(ticker_winrates_output_file, index=False)
 
     # ==============================================================================
     # ▼▼▼ 7. 今日の予測と推奨銘柄のリストアップ（修正済みのセクション） ▼▼▼
@@ -1737,7 +1781,7 @@ def main():
             msg = MIMEMultipart("related")
             msg["From"] = GMAIL_USER
             msg["To"] = recipient
-            msg["Subject"] = f"商品v3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
+            msg["Subject"] = f"FXv3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
 
             # HTML本文を作成
             body_html = f"""

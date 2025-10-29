@@ -1,3 +1,157 @@
+import os
+import yfinance as yf
+import pandas as pd
+from datetime import datetime
+
+# --- 修正箇所 ---
+# 各要素を「ティッカー  # 銘柄名」という形式の一つの文字列に修正しました。
+futures_tickers = {
+    "メジャー通貨ペア": [
+        "EURUSD=X  # ユーロ/米ドル",
+        "JPY=X      # 米ドル/日本円",
+        "GBPUSD=X  # 英ポンド/米ドル",
+        "CHF=X      # 米ドル/スイスフラン",
+        "AUDUSD=X  # 豪ドル/米ドル",
+        "CAD=X      # 米ドル/カナダドル",
+        "NZDUSD=X  # NZドル/米ドル",
+    ],
+    "クロス円": [
+        "EURJPY=X  # ユーロ/円",
+        "GBPJPY=X  # 英ポンド/円",
+        "AUDJPY=X  # 豪ドル/円",
+        "NZDJPY=X  # NZドル/円",
+        "CADJPY=X  # カナダドル/円",
+        "CHFJPY=X  # スイスフラン/円",
+    ],
+    "その他のクロス通貨": [
+        "EURGBP=X  # ユーロ/英ポンド",
+        "EURAUD=X  # ユーロ/豪ドル",
+        "EURCHF=X  # ユーロ/スイスフラン",
+        "GBPAUD=X  # 英ポンド/豪ドル",
+        "GBPCHF=X  # 英ポンド/スイスフラン",
+        "AUDNZD=X  # 豪ドル/NZドル",
+    ],
+    "エキゾチック通貨ペア": [
+        "TRY=X      # 米ドル/トルコリラ",
+        "MXN=X      # 米ドル/メキシコペソ",
+        "ZAR=X      # 米ドル/南アフリカランド",
+        "SGD=X      # 米ドル/シンガポールドル",
+        "HKD=X      # 米ドル/香港ドル",
+        "EURTRY=X  # ユーロ/トルコリラ",
+        "ZARJPY=X  # 南アフリカランド/円",
+        "MXNJPY=X  # メキシコペソ/円",
+        "TRYJPY=X  # トルコリラ/円",
+        "NOKJPY=X  # ノルウェークローネ/円",
+        "SEKJPY=X  # スウェーデンクローナ/円",
+    ],
+    "高金利通貨ペア": [
+        "TRYJPY=X  # トルコリラ/円",
+        "MXNJPY=X  # メキシコペソ/円",
+        "ZARJPY=X  # 南アフリカランド/円",
+        "BRLJPY=X  # ブラジルレアル/円",
+    ],
+}
+
+# --- ここからが実行コード ---
+
+# 保存先フォルダの指定（存在しなければ作成）
+save_folder = "./分析"
+if not os.path.exists(save_folder):
+    os.makedirs(save_folder)
+
+# 1. すべてのティッカーを一つのリストにまとめる
+all_tickers = []
+ticker_to_name = {}
+for category, tickers in futures_tickers.items():
+    for ticker_with_name in tickers:
+        # "  # " (スペース2つ、#、スペース1つ)で分割
+        parts = ticker_with_name.split("  # ")
+        if len(parts) == 2:
+            ticker = parts[0].strip()
+            name = parts[1].strip()
+            all_tickers.append(ticker)
+            ticker_to_name[ticker] = name
+
+# 重複を除外
+ticker_symbols = sorted(list(set(all_tickers)))
+
+# --- 追加：ティッカーリストが空でないかチェック ---
+if not ticker_symbols:
+    print("エラー: 処理対象のティッカーが見つかりませんでした。futures_tickersのデータ形式を確認してください。")
+    exit() # プログラムを終了
+
+print(f"合計 {len(ticker_symbols)} 銘柄の株価データをダウンロードします。処理には数分かかる場合があります...")
+
+# 2. yfinanceで株価データを一括ダウンロード
+try:
+    data = yf.download(
+        ticker_symbols,
+        period="10y",
+        progress=True,
+        auto_adjust=False,
+        group_by='ticker'
+    )
+    print("データのダウンロードが完了しました。")
+
+    # 3. 各銘柄の上昇率を計算
+    results = []
+    
+    for ticker in ticker_symbols:
+        try:
+            ticker_data = data[ticker] if len(ticker_symbols) > 1 else data
+            
+            adj_close = ticker_data['Adj Close'].dropna()
+
+            if len(adj_close) > 1:
+                start_price = adj_close.iloc[0]
+                end_price = adj_close.iloc[-1]
+                
+                start_date = adj_close.index[0].strftime('%Y-%m-%d')
+                end_date = adj_close.index[-1].strftime('%Y-%m-%d')
+
+                if start_price > 0:
+                    growth_rate = (end_price - start_price) / start_price
+                    results.append({
+                        'ティッカー': ticker,
+                        '銘柄名': ticker_to_name.get(ticker, 'N/A'),
+                        '上昇率 (%)': growth_rate * 100,
+                        'カテゴリ': next((cat for cat, tkrs in futures_tickers.items() if any(t.startswith(ticker) for t in tkrs)), 'N/A'),
+                        '開始日': start_date,
+                        '終了日': end_date,
+                        '開始価格': start_price,
+                        '終了価格': end_price
+                    })
+        except (KeyError, IndexError) as e:
+            print(f"ティッカー {ticker} のデータ処理中にエラーが発生しました: {e} スキップします。")
+
+    # 4. 上昇率でソートし、上位30件を取得
+    if results:
+        results_df = pd.DataFrame(results)
+        top_30_df = results_df.sort_values(by='上昇率 (%)', ascending=False).head(50).reset_index(drop=True)
+
+        # 5. 結果を表示
+        print("\n--- 過去10年間（または上場以来）の上昇率トップ30 ETF ---")
+        pd.set_option('display.max_rows', 50)
+        pd.set_option('display.width', 120)
+        print(top_30_df[['ティッカー', '銘柄名', '上昇率 (%)', 'カテゴリ']])
+        
+        # 6. 結果をCSVファイルに保存
+        file_path = os.path.join(save_folder, "top_30_fx_by_growth.csv")
+        top_30_to_save = top_30_df.copy()
+        top_30_to_save['上昇率 (%)'] = top_30_to_save['上昇率 (%)'].round(2)
+        top_30_to_save['開始価格'] = top_30_to_save['開始価格'].round(2)
+        top_30_to_save['終了価格'] = top_30_to_save['終了価格'].round(2)
+        
+        top_30_to_save.to_csv(file_path, index=False, encoding='utf-8-sig')
+        print(f"\n分析結果を {file_path} に保存しました。")
+
+    else:
+        print("上昇率を計算できる銘柄がありませんでした。")
+
+except Exception as e:
+    print(f"データダウンロード中に予期せぬエラーが発生しました: {e}")
+    print("ネットワーク接続を確認するか、しばらくしてから再試行してください。")
+
 # =============================================================================
 # ▼▼▼ 1. トップレベル：すべてのインポート文 ▼▼▼
 # =============================================================================
@@ -648,17 +802,16 @@ def run_simulation_for_ticker(args):
 
     try:
         # ▼▼▼【修正箇所】▼▼▼
-        # 主要な価格データ('Open', 'High', 'Low', 'Close')にNaNが含まれる行を削除する
-        # これにより、データの一部が欠損していても、残りの有効なデータでシミュレーションが可能になる
-        df_price = df_price.dropna(subset=['Open', 'High', 'Low', 'Close'])
+        # 'Open'列にNaN（欠損値）が1つでも含まれていれば、このティッカーの処理をスキップ
+        if df_price['Open'].isnull().any():
+            # print(f"--- スキップ ({ticker}): 'Open'価格に欠損値(NaN)が含まれています ---") # ログが必要な場合はコメントを解除
+            return []
         # ▲▲▲【修正完了】▲▲▲
 
         # 特徴量生成
         X_sim, _, _, indices_sim = create_combined_features(df_price, lookback_days=lookback_days, deal_term=deal_term)
-        
-        # dropnaの結果や特徴量生成の条件によりデータがなくなった場合、処理を終了
         if len(X_sim) == 0:
-            return [] 
+            return [] # 結果がない場合は空リストを返す
 
         # スケーリングと予測
         X_sim_scaled = scaler.transform(X_sim)
@@ -1014,64 +1167,23 @@ import urllib.parse
 
 # TradingViewリンク生成関数
 def to_tradingview_link(ticker: str) -> str:
+    if ticker.endswith(".T"):
+        code = ticker.replace(".T", "")
+        url = (
+            f"https://www.tradingview.com/chart/"
+            f"?symbol=TSE:{code}"
+            f"&interval=D"
+            f"&chartType=1"
+        )
+    else:
+        url = (
+            f"https://www.tradingview.com/chart/"
+            f"?symbol={ticker}"
+            f"&interval=D"
+            f"&chartType=1"
+        )
+    return f'<a href="{url}" target="_blank">{ticker}</a>'
 
-    """
-    Yahoo FinanceのティッカーをTradingViewのURLシンボル形式に変換し、
-    HTMLリンクを生成する。
-
-    【変換ルール】
-    - FX ("EURUSD=X")      -> "EURUSD"
-    - 先物 ("GC=F")        -> "GC1!" (一般的な先物形式への推測)
-    - 仮想通貨 ("BTC-USD") -> "BTCUSD"
-    - 日本株 ("1802.T")    -> "TSE:1802"
-    - 指数 ("^N225")      -> "NI225" (よく使われるシンボルへの変換)
-    - その他 (米国株など)  -> そのまま
-    """
-    # 万が一、文字列以外のデータが来た場合のエラー回避
-    if not isinstance(ticker, str):
-        return str(ticker)
-
-    # リンクに表示するテキストは、元のYahooティッカーのままにする
-    display_text = ticker
-    # URL用に変換するシンボルを準備
-    symbol = ticker
-
-    # --- ルールに基づいてシンボルを変換 ---
-    # 1. FX (末尾が =X)
-    if ticker.endswith("=X"):
-        symbol = ticker.replace("=X", "")
-    
-    # 2. コモディティ・株価指数の先物 (末尾が =F)
-    elif ticker.endswith("=F"):
-        # TradingViewでは限月を指定する '1!' などを付けるのが一般的
-        symbol = ticker.replace("=F", "") + "1!"
-
-    # 3. 仮想通貨 (ハイフンを含む)
-    elif "-" in ticker and any(cur in ticker for cur in ["USD", "JPY", "EUR"]):
-        symbol = ticker.replace("-", "")
-
-    # 4. 日本株 (末尾が .T)
-    elif ticker.endswith(".T"):
-        symbol = f"TSE:{ticker.replace('.T', '')}"
-
-    # 5. 主要な指数 (先頭が ^)
-    elif ticker.startswith("^"):
-        # 主要な指数のシンボルをマッピング
-        index_map = {
-            "^N225": "NI225",
-            "^GSPC": "SPX",
-            "^DJI": "DJI",
-            "^IXIC": "IXIC",
-        }
-        # マップに存在すれば変換し、なければ先頭の'^'を削除するだけ
-        symbol = index_map.get(ticker, ticker.replace("^", ""))
-
-    # --- URLを生成 ---
-    # シンボルをURLエンコードして、安全なURLを作成
-    encoded_symbol = urllib.parse.quote(symbol)
-    url = f"https://www.tradingview.com/chart/?symbol={encoded_symbol}"
-
-    return f'<a href="{url}" target="_blank">{display_text}</a>'
 # Wikipediaリンク生成関数（日本語版をimport wikipediaで検索）
 def to_wikipedia_link(company_name: str) -> str:
     try:
@@ -1134,37 +1246,12 @@ def main():
     # ★ 重要な修正: `datetime.datetime`のようにフルパスで指定する
     ONE_MONTH_AGO = datetime.datetime.now() - datetime.timedelta(days=30)
     initial_investment = 2000000
-    leverage = 5
+    leverage = 1
     stop_loss_threshold = 0.3
     
     print(f"最大 {MAX_WORKERS} スレッド/プロセスで並列処理を開始します。")
     load_dotenv()
     folder_path = "./分析"; os.makedirs(folder_path, exist_ok=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     # ==============================================================================
@@ -1178,12 +1265,12 @@ def main():
         # ./分析 フォルダから対象となるファイルを探す
         candidate_files = [
             os.path.join(folder, f) for f in os.listdir(folder)
-            if (f == "top_30_commodity_by_growth.csv" or  # 元のCSVファイル
-            (f.startswith("top_30_commo") and f.endswith(".xlsx"))) # 新しいExcelファイル
+            if (f == "top_30_fx_by_growth.csv" or  # 元のCSVファイル
+            (f.startswith("etf_top30_") and f.endswith(".xlsx"))) # 新しいExcelファイル
         ]
         
         if not candidate_files:
-            raise FileNotFoundError(f"分析フォルダ内に 'top_30_etfs_btop_30_commodity_by_growthy_growth.csv' または 'top_30_commo*.xlsx' ファイルが見つかりません。")
+            raise FileNotFoundError(f"分析フォルダ内に 'top_30_etfs_by_growth.csv' または 'etf_top30_*.xlsx' ファイルが見つかりません。")
 
         # 更新日時が最も新しいファイルを選択
         latest_file = max(candidate_files, key=os.path.getctime)
@@ -1246,7 +1333,7 @@ def main():
         top_ranked["銘柄名"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('銘柄名', 'N/A'))
         top_ranked["カテゴリ"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('カテゴリ', 'N/A'))
         
-        top_ranked["スコア (%)"] = (top_ranked["スコア"] * 100).round(40)
+        top_ranked["スコア (%)"] = (top_ranked["スコア"] * 100).round(2)
         top_ranked = top_ranked[["銘柄コード", "銘柄名", "カテゴリ", "スコア (%)"]]
         
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1266,7 +1353,6 @@ def main():
     print(f"\n学習・予測対象の銘柄（{len(ticker_symbols)}件）の10年分データを取得中...")
     data = yf.download(ticker_symbols, period="10y", progress=False, auto_adjust=False, group_by='ticker')
     ticker_data_dict = {ticker: data.xs(ticker, axis=1, level=0).copy() for ticker in ticker_symbols if ticker in data.columns.get_level_values(0)}
-
 
 
     # =================================================================================
@@ -1302,526 +1388,6 @@ def main():
     ticker_symbols = successful_tickers
     print("\n全ティッカーのモデル準備が完了しました。")
     print(f"ロード済みモデル数: LightGBM({len(lgb_models_dict)}), XGBoost({len(xgb_models_dict)}), CatBoost({len(cat_models_dict)}), TabNet({len(tabnet_models_dict)}), NGBoost({len(ngb_models_dict)})")
-
-
-
-
-
-    # ==============================================================================
-    # 5. シミュレーションの実行 (アンサンブル予測) - 【並列処理版】
-    # ==============================================================================
-    print("\nアンサンブルモデルによるシミュレーションを並列で開始します...")
-    simulation_results = []
-
-    # --- 並列処理のためのタスクリストを作成 ---
-    tasks = []
-    for ticker in ticker_symbols:
-        # 必要なデータとモデルがすべて揃っているか確認
-        data_exists = ticker in ticker_data_dict and not ticker_data_dict[ticker].empty
-        models_exist = all(ticker in d for d in [lgb_models_dict, xgb_models_dict, cat_models_dict, tabnet_models_dict, ngb_models_dict, scalers_dict])
-
-        if data_exists and models_exist:
-            # ワーカー関数に渡す引数をタプルにまとめる
-            models = (
-                lgb_models_dict[ticker],
-                xgb_models_dict[ticker],
-                cat_models_dict[ticker],
-                tabnet_models_dict[ticker],
-                ngb_models_dict[ticker]
-            )
-            args = (
-                ticker,
-                ticker_data_dict[ticker],
-                models,
-                scalers_dict[ticker],
-                lookback_days,
-                deal_term
-            )
-            tasks.append(args)
-
-    # --- ProcessPoolExecutorで並列実行 ---
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        # executor.mapは、tasksリストの各要素をrun_simulation_for_ticker関数に渡し、
-        # 処理が完了した順に結果を返してくれる
-        results_list = executor.map(run_simulation_for_ticker, tasks)
-
-        # 各ワーカーから返された結果（リスト）を、一つの大きなリストにまとめる
-        for result in results_list:
-            simulation_results.extend(result)
-
-    # --- 結果の保存（変更なし） ---
-    df_simulation = pd.DataFrame(simulation_results)
-    simulation_file_name = f"./分析/simulation_results_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    if not df_simulation.empty:
-        df_simulation.to_excel(simulation_file_name, index=False)
-        print(f"\nシミュレーション結果が '{simulation_file_name}' に保存されました。")
-    else:
-        simulation_file_name = ""
-        print("\nシミュレーション結果はありませんでした。")
-
-
-    # ==============================================================================
-    # 6. 再投資シミュレーションと結果分析
-    # ==============================================================================
-    current_portfolio = initial_investment; win_rate = 0.0; df_portfolio_progression = pd.DataFrame()
-    weekday_winrates_output_file, ticker_winrates_output_file = "", ""
-
-    if not df_simulation.empty:
-        simulation_dates = sorted(df_simulation["Simulation Date"].unique())
-        portfolio_progression, current_holdings = [], []
-        total_trades, winning_trades = 0, 0
-        MAX_HOLDINGS = 3
-        for sim_date in simulation_dates:
-            holdings_after_sell = []
-            for holding in current_holdings:
-                if sim_date >= (holding["enter_date"] + pd.DateOffset(days=deal_term)).date():
-                    total_trades += 1; row = holding["row_data"]
-                    percentage_return = ((row["Exit Price"] - row["Start Price"]) / row["Start Price"]) * leverage if row["Start Price"] > 0 else 0
-                    if percentage_return > 0: winning_trades += 1
-                    current_portfolio *= (1 + (percentage_return / MAX_HOLDINGS))
-                    portfolio_progression.append({"Date": sim_date, "Event": "SELL", "Ticker": row["Ticker"], "Trade Return (%)": percentage_return * 100, "Updated Portfolio": current_portfolio, "Win Rate (%)": (winning_trades / total_trades * 100)})
-                else: holdings_after_sell.append(holding)
-            current_holdings = holdings_after_sell
-            available_slots = MAX_HOLDINGS - len(current_holdings)
-            if available_slots > 0:
-                df_deals = df_simulation[df_simulation["Simulation Date"] == sim_date]
-                df_new_buys = df_deals[~df_deals["Ticker"].isin([h["ticker"] for h in current_holdings])].sort_values(by="Predicted Probability", ascending=False).head(available_slots)
-                for _, row in df_new_buys.iterrows():
-                    current_holdings.append({"enter_date": sim_date, "ticker": row["Ticker"], "row_data": row})
-                    portfolio_progression.append({"Date": sim_date, "Event": "BUY", "Ticker": row["Ticker"], "Trade Return (%)": None, "Updated Portfolio": current_portfolio, "Win Rate (%)": (winning_trades / total_trades * 100) if total_trades > 0 else 0})
-        
-        win_rate = (winning_trades / total_trades) * 100 if total_trades > 0 else 0
-        df_portfolio_progression = pd.DataFrame(portfolio_progression)
-        trade_log_file_name = f"./分析/trade_log_max3_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; df_portfolio_progression.to_excel(trade_log_file_name, index=False)
-        
-        df_simulation["Date"] = pd.to_datetime(df_simulation["Simulation Date"]); df_simulation["Weekday"] = df_simulation["Date"].dt.dayofweek
-        weekday_stats = df_simulation.groupby("Weekday").apply(lambda x: pd.Series({"勝利数": (x["Profit/Loss (JPY)"] > 0).sum(), "取引数": len(x), "勝率": (x["Profit/Loss (JPY)"] > 0).mean()})).reset_index()
-        weekday_stats["曜日"] = weekday_stats["Weekday"].map({0: "月", 1: "火", 2: "水", 3: "木", 4: "金", 5: "土", 6: "日"})
-        weekday_winrates_output_file = f"./分析/weekday_winrates_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; weekday_stats[["曜日", "勝利数", "取引数", "勝率"]].to_excel(weekday_winrates_output_file, index=False)
-        
-        ticker_stats = df_simulation.groupby("Ticker").apply(lambda x: pd.Series({"勝利数": (x["Profit/Loss (JPY)"] > 0).sum(), "取引数": len(x), "勝率": (x["Profit/Loss (JPY)"] > 0).mean()})).reset_index()
-        ticker_stats["Company Name"] = ticker_stats["Ticker"].apply(get_company_name)
-        ticker_winrates_output_file = f"./分析/ticker_winrates_ensemble_5models_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"; ticker_stats[["Ticker", "Company Name", "勝利数", "取引数", "勝率"]].to_excel(ticker_winrates_output_file, index=False)
-
-
-    # ==============================================================================
-    # ▼▼▼ 7. 今日の予測と推奨銘柄のリストアップ（修正済みのセクション） ▼▼▼
-    # ==============================================================================
-    # def get_daily_ohlc_from_hourly(ticker, period="10y"):
-    #     """
-    #     1時間足データから日足OHLCを生成し、最新の価格を1分足データで補完・更新する関数。
-    #     """
-    #     # 1. 1時間足データを取得し、日足にリサンプリング
-    #     df_hourly = yf.download(ticker, period=period, interval="1h", progress=False)
-    #     if df_hourly.empty:
-    #         print(f"  {ticker}: 1時間足データ取得できず。")
-    #         return pd.DataFrame(columns=["Open", "High", "Low", "Close"], dtype=float)
-        
-    #     print("=" * 50); print(f"[{ticker}] 1時間足データ取得完了")
-
-    #     df_hourly.index = pd.to_datetime(df_hourly.index, utc=True).tz_convert('America/New_York') # タイムゾーンを米国東部時間に変換
-    #     df_hourly = df_hourly.sort_index()
-    #     daily_open = df_hourly['Open'].resample('D').first()
-    #     daily_high = df_hourly['High'].resample('D').max()
-    #     daily_low = df_hourly['Low'].resample('D').min()
-    #     daily_close = df_hourly['Close'].resample('D').last()
-    #     df_daily = pd.concat([daily_open, daily_high, daily_low, daily_close], axis=1, keys=['Open', 'High', 'Low', 'Close']).dropna()
-    #     print(f"[{ticker}] 1時間足から日足へリサンプリング完了")
-    #     # print(df_daily.tail()) # デバッグ用: 1時間足ベースのデータ確認
-        
-    #     # 終了時刻を定義
-    #     RETURN_TIME_LIMIT = datetime.time(9, 59, 0)
-        
-    #     # 現在の時刻を取得 (時、分、秒のみ)
-    #     current_time = datetime.datetime.now().time()
-        
-    #     # 判定
-    #     if current_time >= RETURN_TIME_LIMIT:
-    #         print(f"現在の時刻 {current_time.strftime('%H:%M:%S')} は 09:59:00 以上です。処理を終了します (return)。")
-    #         return df_daily
-
-
-    #     # 2. 直近の1分足データを取得して最新情報に更新
-    #     # yfinanceでは1分足データは過去7日間までしか取得できない仕様
-    #     df_minutely = yf.download(ticker, period="7d", interval="1m", progress=False)
-    #     if not df_minutely.empty:
-    #         print(f"[{ticker}] 最新化のため1分足データを取得")
-    #         df_minutely.index = pd.to_datetime(df_minutely.index, utc=True).tz_convert('America/New_York') # タイムゾーンを変換
-
-    #         # 3. 1分足データを日足にリサンプリング
-    #         latest_daily_open = df_minutely['Open'].resample('D').first()
-    #         latest_daily_high = df_minutely['High'].resample('D').max()
-    #         latest_daily_low = df_minutely['Low'].resample('D').min()
-    #         latest_daily_close = df_minutely['Close'].resample('D').last()
-    #         df_latest_daily = pd.concat([latest_daily_open, latest_daily_high, latest_daily_low, latest_daily_close], axis=1, keys=['Open', 'High', 'Low', 'Close']).dropna()
-            
-    #         if not df_latest_daily.empty:
-    #             # 4. 1時間足ベースのデータに、1分足ベースの最新データを結合して更新
-    #             # concatで2つのデータフレームを結合し、重複した日付（インデックス）は後から来たもの（1分足ベース）を優先する
-    #             df_daily = pd.concat([df_daily, df_latest_daily])
-    #             df_daily = df_daily[~df_daily.index.duplicated(keep='last')].sort_index()
-    #             print(f"[{ticker}] 1分足のデータで最新の日足を更新完了")
-    #     else:
-    #         print(f"  {ticker}: 1分足データ取得できず。1時間足データのみで処理を続行します。")
-
-    #     print("=" * 50); print(f"[{ticker}] 処理完了後の最新日足データ（末尾5件）"); print(df_daily.tail()); print("=" * 50)
-    #     return df_daily
-
-    def get_market_threshold_time():
-        market_tz = ZoneInfo("America/New_York"); now_market = datetime.datetime.now(market_tz)
-        return dtime(22, 31, 0) if now_market.dst() != timedelta(0) else dtime(23, 31, 0)
-
-    # ==============================================================================
-    # 7. 今日の予測と推奨銘柄のリストアップ - 【並列処理版】
-    # ==============================================================================
-    print("\n今日の予測のための特徴量生成を並列で開始します...")
-
-    # --- 並列処理のためのタスクリストを作成 ---
-    tasks_today = []
-    for ticker in ticker_symbols:
-        # ワーカー関数に渡す引数をタプルにまとめる
-        args = (ticker, lookback_days, deal_term)
-        tasks_today.append(args)
-
-    # --- ProcessPoolExecutorで並列実行 ---
-    X_rows_dict = {}
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        # executor.mapを使って並列実行し、結果を収集
-        # 結果は (ticker, feature_vector) のタプルで返ってくる
-        for ticker, feature_vector in executor.map(create_features_for_single_ticker_today, tasks_today):
-            if feature_vector is not None:
-                X_rows_dict[ticker] = feature_vector
-
-    # --- 処理が成功した銘柄でX_todayとtickers_todayを再構築 ---
-    # これにより、エラーが発生した銘柄は自動的に除外される
-    tickers_today = list(X_rows_dict.keys())
-    if tickers_today:
-        X_today = np.vstack([X_rows_dict[ticker] for ticker in tickers_today])
-    else:
-        X_today = np.array([]) # 処理成功した銘柄が一つもなかった場合
-
-    print(f"\n最終的な X_today.shape = {X_today.shape}"); print(f"処理成功銘柄数 = {len(tickers_today)}")
-
-    # --- 各ティッカーのモデルを用いて本日の予測確率を算出 ---
-    predictions = []
-    if len(X_today) > 0:
-        for ticker, feature_vector in zip(tickers_today, X_today):
-            # ★ NGBoost 変更点 12: NGBoostのモデル辞書もチェック
-            if all(ticker in d for d in [lgb_models_dict, xgb_models_dict, cat_models_dict, tabnet_models_dict, ngb_models_dict, scalers_dict]):
-                scaler = scalers_dict[ticker]
-                # ★ NGBoost 変更点 13: ngb_modelも辞書から取り出す
-                lgb_model, xgb_model, cat_model, tabnet_model, ngb_model = lgb_models_dict[ticker], xgb_models_dict[ticker], cat_models_dict[ticker], tabnet_models_dict[ticker], ngb_models_dict[ticker]
-                
-                x_today_vec = feature_vector.reshape(1, -1)
-                x_scaled = scaler.transform(x_today_vec)
-                
-                prob_lgb = lgb_model.predict_proba(x_scaled)[0, 1]
-                prob_xgb = xgb_model.predict_proba(x_scaled)[0, 1]
-                prob_cat = cat_model.predict_proba(x_scaled)[0, 1]
-                prob_tabnet = tabnet_model.predict_proba(x_scaled.astype(np.float32))[0, 1]
-                # ★ NGBoost 変更点 14: NGBoostで予測
-                prob_ngb = ngb_model.predict_proba(x_scaled)[0, 1]
-                
-                # ★ NGBoost 変更点 15: 5モデルの平均を計算
-                prob = (prob_lgb + prob_xgb + prob_cat + prob_tabnet + prob_ngb) / 5.0
-                predictions.append({"Ticker": ticker, "Probability": prob})
-
-    # (以降の推奨銘柄リストアップ、メール送信部分は変更なし)
-    today_data = pd.DataFrame(predictions).sort_values("Probability", ascending=False)
-    recommendation_data = today_data.sort_values(by="Probability", ascending=False)
-    print("本日の各ティッカー別予測結果:"); print(recommendation_data)
-    purchase_recommendations_top3, purchase_recommendations_top5, purchase_recommendations_top6 = [], [], []
-    end_date = datetime.datetime.now(); exit_date = end_date + BusinessDay(deal_term)
-    print("Exit Date (deal_term 営業日後):", exit_date)
-    for top_n, purchase_recommendations in [(3, purchase_recommendations_top3), (15, purchase_recommendations_top5), (6, purchase_recommendations_top6)]:
-        top_stocks_rec = recommendation_data.head(top_n)
-        for idx, row in top_stocks_rec.iterrows():
-            ticker_ = row["Ticker"]; company_name = get_company_name(ticker_)
-            try:
-                start_price = float(data[ticker_]["Open"].iloc[-1]); trade_amount = initial_investment / top_n
-                position_size = trade_amount; stop_loss_price = (1 - stop_loss_threshold) * start_price
-                stop_loss_amount = stop_loss_threshold * start_price; number_of_shares = position_size // start_price
-                if number_of_shares == 0: continue
-                actual_investment = number_of_shares * start_price
-                purchase_recommendations.append({"Entry Date": end_date.strftime('%Y-%m-%d'), "Exit Date": exit_date.strftime('%Y-%m-%d'), "Term (Business Days)": deal_term, "Ticker": ticker_, "Company Name": company_name, "Current Price": start_price, "Stop Loss Amount": stop_loss_amount * int(number_of_shares), "Stop Loss Price": stop_loss_price, "Shares Bought": int(number_of_shares), "Investment per Stock (JPY)": round(actual_investment, 2), "Predicted Probability (%)": round(row["Probability"] * 100, 2)})
-            except Exception as e: print(f"{ticker_}: エラーが発生しました。", e); continue
-    columns_order = ["Entry Date", "Exit Date", "Term (Business Days)", "Ticker", "Company Name", "Current Price", "Shares Bought", "Stop Loss Amount", "Stop Loss Price", "Investment per Stock (JPY)", "Predicted Probability (%)"]
-    purchase_df_top3 = pd.DataFrame(purchase_recommendations_top3)[columns_order] if purchase_recommendations_top3 else pd.DataFrame(columns=columns_order)
-    purchase_df_top5 = pd.DataFrame(purchase_recommendations_top5)[columns_order] if purchase_recommendations_top5 else pd.DataFrame(columns=columns_order)
-    purchase_df_top6 = pd.DataFrame(purchase_recommendations_top6)[columns_order] if purchase_recommendations_top6 else pd.DataFrame(columns=columns_order)
-    print("\n上位3件の購入推奨銘柄:"); print(purchase_df_top3); print("\n上位15件の購入推奨銘柄:"); print(purchase_df_top5); print("\n上位6件の購入推奨銘柄:"); print(purchase_df_top6)
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    file_name_top3 = f"./分析/5models_top3_{timestamp}.xlsx"; file_name_top5 = f"./分析/5models_top5_{timestamp}.xlsx"; file_name_top6 = f"./分析/5models_top6_{timestamp}.xlsx"
-    purchase_df_top3.to_excel(file_name_top3, index=False); purchase_df_top5.to_excel(file_name_top5, index=False); purchase_df_top6.to_excel(file_name_top6, index=False)
-    print("\n購入リストが以下のファイルに保存されました。"); print(f" - {file_name_top3}"); print(f" - {file_name_top5}"); print(f" - {file_name_top6}")
-
-
-
-    time.sleep(3)
-    # import smtplib
-    # from dotenv import load_dotenv
-    # import os
-
-    # # 1. まず.envファイルを読み込む
-    # load_dotenv()
-    # import time
-    # import datetime
-    # from email.mime.multipart import MIMEMultipart
-    # from email.mime.text import MIMEText
-    # from email.mime.base import MIMEBase
-    # from email import encoders
-    # from email.mime.image import MIMEImage
-    # import matplotlib.pyplot as plt
-    # import mplfinance as mpf
-
-
-    # Gmail 設定
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    GMAIL_USER = "k.atsuofxtrade@gmail.com"
-    GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD")
-
-
-
-
-    # ==== 設定セクション ====
-    EMAIL_BASE_DIR = "./mail_adress"
-    os.makedirs(EMAIL_BASE_DIR, exist_ok=True)
-
-    # 受信先を外部 CSV から読み込む
-    RECIPIENT_CSV = os.path.join(EMAIL_BASE_DIR, "recipients.csv")
-    def load_recipients_from_csv(path):
-        """CSV の 'email' 列からコメントや空行を除いて読み込む"""
-        if not os.path.exists(path):
-            return []
-        df = pd.read_csv(path, dtype=str)
-        # 空白／NaN 行は除去
-        df = df.dropna(subset=['email'])
-        # 前後空白とコメント行（先頭'#'）を排除
-        emails = [
-            e.strip() for e in df['email'].tolist()
-            if e.strip() and not e.strip().startswith('#')
-        ]
-
-        return emails
-
-    # 読み込んだリストをグローバル変数に
-    recipient_list = load_recipients_from_csv(RECIPIENT_CSV)
-
-    # 送信先リスト
-    recipient_list = [
-        # "k.atsuojp429@gmail.com",
-        # "k.atsuo-jp@outlook.com",
-        "kotera2hjp@gmail.com",
-        # "kotera2hjp@outlook.jp",
-        # "kotera2hjp@yahoo.co.jp",
-        "k.atsuofxtrade@gmail.com",
-        "satosato.k543@gmail.com",
-        "clubtrdr@gmail.com"
-    ]
-
-
-    # スクリプトのディレクトリを取得
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # ファイルパスをスクリプトのパスに基づいて定義
-    file_path_top3 = os.path.join(script_dir, file_name_top3)
-    file_path_top5 = os.path.join(script_dir, file_name_top5)
-
-
-    simulation_file = os.path.join(script_dir, simulation_file_name)
-    weekday_winrates_output_file_file = os.path.join(script_dir, weekday_winrates_output_file)
-    ticker_winrates_output_file_file = os.path.join(script_dir, ticker_winrates_output_file)
-
-    file_paths = [
-        file_path_top3,
-        file_path_top5,
-        simulation_file,
-        weekday_winrates_output_file_file,
-        ticker_winrates_output_file_file,
-    ]
-    file_paths = [path.replace("\\", "/").replace("./", "") for path in file_paths]
-
-    print(file_paths)
-
-    import matplotlib.pyplot as plt
-
-    # --- purchase_df_top5 の拡張 ---
-    raw_tickers   = purchase_df_top5["Ticker"].str.replace(r"<.*?>", "", regex=True)
-    company_names = purchase_df_top5["Company Name"].tolist()
-
-    # 既存のリンク生成部分
-    tv_links   = []
-    wiki_links = []
-    home_links = []
-    x_links    = []
-
-    for ticker, cname in zip(raw_tickers, company_names):
-        tv_links.append(to_tradingview_link(ticker))
-        wiki_links.append(to_wikipedia_link(cname))
-        home_links.append(fetch_homepage(ticker))
-        x_links.append(to_x_link(cname))
-
-    purchase_df5 = purchase_df_top5.copy()
-    purchase_df5["Ticker"]   = tv_links
-    purchase_df5["Wiki"]     = wiki_links
-    purchase_df5["Homepage"] = home_links
-    purchase_df5["Xリンク"]  = x_links
-
-    top5_stocks_html = purchase_df5.to_html(
-        index=False,
-        justify="center",
-        border=1,
-        escape=False
-    )
-
-    # 日付取得
-    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-
-
-    # 送信前に数値をクリーニング
-    if math.isnan(current_portfolio):
-        current_portfolio = 0
-    if math.isnan(initial_investment):
-        initial_investment = 0
-
-
-
-
-    try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()  # TLS 暗号化を開始
-        server.login(GMAIL_USER, GMAIL_PASSWORD)  # ログイン
-
-        raito = current_portfolio / initial_investment
-        profit = current_portfolio - initial_investment
-
-        # HTML形式の表を作成
-
-        # DataFrameのTicker列をリンク付きに変換
-        # purchase_df_top5['Ticker'] = purchase_df_top5['Ticker'].apply(to_tradingview_link)
-        purchase_df_top3['Ticker'] = purchase_df_top3['Ticker'].apply(to_tradingview_link)
-        purchase_df_top6['Ticker'] = purchase_df_top6['Ticker'].apply(to_tradingview_link)
-
-
-        # # HTMLに変換するときは escape=False を指定
-        # top5_stocks_html = purchase_df_top5.to_html(
-        #     index=False,
-        #     justify="center",
-        #     border=1,
-        #     escape=False
-        # )
-
-
-        # 2) ticker_stats を作成した直後にリンク化
-        ticker_stats['Ticker'] = ticker_stats['Ticker'].apply(to_tradingview_link)
-
-        # 3) HTML に変換するときは escape=False を指定
-        ticker_table_html = ticker_stats.to_html(
-            index=False,
-            justify="center",
-            border=1,
-            escape=False
-        )
-
-
-        weekday_table_html = weekday_stats.to_html(index=False, justify="center", border=1)
-        # ticker_table_html = ticker_stats.to_html(index=False, justify="center", border=1)
-        # top5_stocks_html = purchase_df_top5.to_html(index=False, justify="center", border=1) if not purchase_df_top5.empty else ""
-        df_portfolio_progression["Win Rate (%)"] = (df_portfolio_progression["Win Rate (%)"]).round(2)
-        df_portfolio_progression = df_portfolio_progression.round(2)
-        simulation_results_html = df_portfolio_progression.to_html(index=False, justify="center", float_format="{:.2f}".format, border=1, escape=False) if not df_portfolio_progression.empty else ""
-
-        for recipient in recipient_list:
-            # メールの作成
-            msg = MIMEMultipart("related")
-            msg["From"] = GMAIL_USER
-            msg["To"] = recipient
-            msg["Subject"] = f"商品v3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
-
-            # HTML本文を作成
-            body_html = f"""
-            <html>
-            <head>
-                <style>
-                    table {{
-                        border-collapse: collapse;
-                        width: 100%;
-                    }}
-                    th, td {{
-                        border: 1px solid black;
-                        padding: 8px;
-                        text-align: center;
-                    }}
-                    th {{
-                        background-color: #f2f2f2;
-                    }}
-                    img {{
-                        max-width: 100%;
-                        height: auto;
-                        float: left;
-                    }}
-                </style>
-            </head>
-            <body>
-                <p>{recipient} 様</p>
-                <p>平素よりお世話になっております。</p>
-                <p>本日の購入リストのフィクションおすすめ結果をお送りいたします。</p>
-                <p>現在の投資額: {int(current_portfolio):,} 円</p>
-                <p>初期投資額: {int(initial_investment):,} 円</p>
-                <p>レバレッジ: {leverage} 倍</p>
-                <p>取引期間: {deal_term} 営業日</p>
-                <p>総合勝率: {win_rate :.2f} %</p>
-
-                <h3>上位15件の推奨銘柄:</h3>
-                {top5_stocks_html}
-
-                <h3>曜日ごとの勝率:</h3>
-                {weekday_table_html}
-
-                <h3>銘柄ごとの勝率:</h3>
-                {ticker_table_html}
-
-                <h3>上位5社の株価チャート:</h3>
-            """
-
-
-            body_html += f"""
-                <h3>シミュレーション結果:</h3>
-                {simulation_results_html}
-                <p>詳細につきましては、添付ファイルをご確認ください。</p>
-                <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
-            </body>
-            </html>
-            """
-
-            msg.attach(MIMEText(body_html, "html"))
-
-
-
-            # 添付ファイルを追加
-            for file_path in file_paths:
-                if os.path.exists(file_path):
-                    with open(file_path, "rb") as attachment:
-                        part = MIMEBase("application", "octet-stream")
-                        part.set_payload(attachment.read())
-                        encoders.encode_base64(part)
-                        safe_filename = os.path.basename(file_path).encode("ascii", "ignore").decode()
-                        part.add_header("Content-Disposition", f"attachment; filename={safe_filename}")
-                        msg.attach(part)
-
-            # メール送信
-            server.sendmail(GMAIL_USER, recipient, msg.as_string())
-            print(f"送信しました: {recipient}")
-            time.sleep(3)
-
-        # サーバーを閉じる
-        server.quit()
-        print("すべてのメールを送信しました。")
-
-    except Exception as e:
-        print(f"送信エラー: {e}")
-
 
 
 
