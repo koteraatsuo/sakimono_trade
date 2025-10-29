@@ -1670,7 +1670,7 @@ def main():
             msg = MIMEMultipart("related")
             msg["From"] = GMAIL_USER
             msg["To"] = recipient
-            msg["Subject"] = f"商品v3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
+            msg["Subject"] = f"仮想通貨v3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
 
             # HTML本文を作成
             body_html = f"""
