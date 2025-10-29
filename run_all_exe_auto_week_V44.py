@@ -250,6 +250,28 @@ def exe_fx_scripts():
         except Exception as e:
             print(f"Error running {script} in {folder}: {e}")
 
+
+def exe_kasoutuuka_scripts():
+    # fxスクリプトを実行（今回は土曜日に実行）
+    conda_env = "py310_fx"
+    scripts_list = [
+        # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
+        # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_kasoutuka_load.py"),
+    ]
+
+    activate_command = f"conda activate {conda_env}"
+    for folder, script in scripts_list:
+        try:
+            os.chdir(folder)
+            print(f"Running {script} in {folder}...")
+            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
+            print(f"Finished running {script}.")
+        except Exception as e:
+            print(f"Error running {script} in {folder}: {e}")
+
+
+
 def exe_metal_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
@@ -394,6 +416,12 @@ def schedule_job(script_type):
         if today < 5:
             print("Starting fx scripts at 07:00 on Saturday...")
             exe_fx_scripts()
+
+    elif script_type == "kasoutuuka":
+        if today < 5:
+            print("Starting fx scripts at 07:00 on Saturday...")
+            exe_kasoutuuka_scripts()
+
     elif script_type == "send_mail":
         if today == 5:
             print("Starting fx scripts at 07:00 on Saturday...")
@@ -430,6 +458,7 @@ schedule.every().day.at("08:01").do(lambda: schedule_job("sakimono"))
 schedule.every().day.at("22:31").do(lambda: schedule_job("cocoa_coffee"))
 schedule.every().day.at("18:30").do(lambda: schedule_job("before_cfd"))
 schedule.every().day.at("22:30").do(lambda: schedule_job("cfd"))
+schedule.every().day.at("00:01").do(lambda: schedule_job("kasoutuuka"))
 schedule.every().day.at("06:30").do(lambda: schedule_job("send_mail"))
 schedule.every().day.at("06:30").do(lambda: schedule_job("6hour_send_mail"))
 schedule.every().day.at("12:30").do(lambda: schedule_job("6hour_send_mail"))
