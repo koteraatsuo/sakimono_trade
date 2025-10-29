@@ -1204,7 +1204,7 @@ def main():
         top_ranked["銘柄名"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('銘柄名', 'N/A'))
         top_ranked["カテゴリ"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('カテゴリ', 'N/A'))
         
-        top_ranked["スコア (%)"] = (top_ranked["スコア"] * 100).round(2)
+        top_ranked["スコア (%)"] = (top_ranked["スコア"] * 100).round(40)
         top_ranked = top_ranked[["銘柄コード", "銘柄名", "カテゴリ", "スコア (%)"]]
         
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
