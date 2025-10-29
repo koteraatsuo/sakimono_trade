@@ -27,7 +27,6 @@ futures_tickers = {
         "SEI-USD  # Sei",
     ],
     "DeFi (分散型金融)": [
-        "UNI-USD  # Uniswap",
         "AAVE-USD # Aave",
         "LDO-USD  # Lido DAO",
         "MKR-USD  # Maker",
