@@ -1176,7 +1176,7 @@ def main():
         if not all_data:
             raise ValueError("スコア計算対象の銘柄（1年間の上昇率がプラスのETF）がありませんでした。")
 
-        top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False).head(10)
+        top_ranked = pd.DataFrame(all_data).sort_values(by="スコア", ascending=False).head(15)
 
         top_ranked["銘柄名"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('銘柄名', 'N/A'))
         top_ranked["カテゴリ"] = top_ranked["銘柄コード"].apply(lambda x: ticker_info_map[x].get('カテゴリ', 'N/A'))
