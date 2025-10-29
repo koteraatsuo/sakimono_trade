@@ -643,21 +643,22 @@ def run_simulation_for_ticker(args):
 
     local_simulation_results = []
     initial_investment = 2000000
-    leverage = 1
+    leverage = 5
     stop_loss_threshold = 0.3
 
     try:
         # ▼▼▼【修正箇所】▼▼▼
-        # 'Open'列にNaN（欠損値）が1つでも含まれていれば、このティッカーの処理をスキップ
-        if df_price['Open'].isnull().any():
-            # print(f"--- スキップ ({ticker}): 'Open'価格に欠損値(NaN)が含まれています ---") # ログが必要な場合はコメントを解除
-            return []
+        # 主要な価格データ('Open', 'High', 'Low', 'Close')にNaNが含まれる行を削除する
+        # これにより、データの一部が欠損していても、残りの有効なデータでシミュレーションが可能になる
+        df_price = df_price.dropna(subset=['Open', 'High', 'Low', 'Close'])
         # ▲▲▲【修正完了】▲▲▲
 
         # 特徴量生成
         X_sim, _, _, indices_sim = create_combined_features(df_price, lookback_days=lookback_days, deal_term=deal_term)
+        
+        # dropnaの結果や特徴量生成の条件によりデータがなくなった場合、処理を終了
         if len(X_sim) == 0:
-            return [] # 結果がない場合は空リストを返す
+            return [] 
 
         # スケーリングと予測
         X_sim_scaled = scaler.transform(X_sim)
@@ -708,6 +709,7 @@ def run_simulation_for_ticker(args):
         print(f"--- シミュレーションエラー ({ticker}) ---")
         traceback.print_exc()
         return [] # エラー時も空リストを返す
+
 
 def generate_advanced_chart(ticker, save_path, period="5d", interval="15m"):
     """
@@ -1092,7 +1094,7 @@ def main():
     # ★ 重要な修正: `datetime.datetime`のようにフルパスで指定する
     ONE_MONTH_AGO = datetime.datetime.now() - datetime.timedelta(days=30)
     initial_investment = 2000000
-    leverage = 1
+    leverage = 5
     stop_loss_threshold = 0.3
     
     print(f"最大 {MAX_WORKERS} スレッド/プロセスで並列処理を開始します。")

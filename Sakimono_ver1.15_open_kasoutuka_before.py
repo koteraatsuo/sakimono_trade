@@ -808,7 +808,7 @@ def run_simulation_for_ticker(args):
 
     local_simulation_results = []
     initial_investment = 2000000
-    leverage = 1
+    leverage = 5
     stop_loss_threshold = 0.3
 
     try:
