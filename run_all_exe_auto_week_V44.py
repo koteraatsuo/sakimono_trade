@@ -471,7 +471,7 @@ schedule.every().day.at("10:00").do(lambda: schedule_job("refresh"))
 schedule.every().day.at("13:15").do(lambda: exe_update_scripts())
 schedule.every().day.at("01:15").do(lambda: exe_update_scripts())
 # 土曜日は07:30にfxスクリプトを実行
-schedule.every().saturday.at("07:30").do(lambda: schedule_job("fx"))
+schedule.every().day.at("07:30").do(lambda: schedule_job("fx"))
 
 print("スケジュール開始: 平日 07:00 と  08:00 と 09:00 と 19:00 と 22:30、土曜日 07:30 に実行")
 
