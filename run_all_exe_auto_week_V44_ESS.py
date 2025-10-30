@@ -71,6 +71,8 @@ def exe_japanese_before_scripts():
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_kasoutuka_before.py"),     
         ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_before.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_before_gaitame.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_before_fxtf.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.14_open_ETF_before.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_3top100単位_機械_S_emsemble_today_ver1.06_short.py"),
     ]
@@ -213,24 +215,24 @@ def exe_every_6hour_sendmail_scripts():
             print(f"Error running {script} in {folder}: {e}")
 
 
-def exe_fx_scripts():
-    # fxスクリプトを実行（今回は土曜日に実行）
-    conda_env = "py310_fx"
-    scripts_list = [
-        ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
-        ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
-        ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_USDJPY_損切_ajust_ver1.19_送信.py"),
-    ]
+# def exe_fx_scripts():
+#     # fxスクリプトを実行（今回は土曜日に実行）
+#     conda_env = "py310_fx"
+#     scripts_list = [
+#         ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
+#         ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
+#         ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_USDJPY_損切_ajust_ver1.19_送信.py"),
+#     ]
 
-    activate_command = f"conda activate {conda_env}"
-    for folder, script in scripts_list:
-        try:
-            os.chdir(folder)
-            print(f"Running {script} in {folder}...")
-            subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
-            print(f"Finished running {script}.")
-        except Exception as e:
-            print(f"Error running {script} in {folder}: {e}")
+#     activate_command = f"conda activate {conda_env}"
+#     for folder, script in scripts_list:
+#         try:
+#             os.chdir(folder)
+#             print(f"Running {script} in {folder}...")
+#             subprocess.run(f"{activate_command} && python {script}", shell=True, check=True)
+#             print(f"Finished running {script}.")
+#         except Exception as e:
+#             print(f"Error running {script} in {folder}: {e}")
 
 
 
@@ -239,8 +241,8 @@ def exe_fx_scripts():
     conda_env = "py310_fx"
     
     scripts_list = [
-        # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_GBPJPY_損切_ajust_ver1.19_送信.py"),
-        # ("C:/workspace/fx_trade_3", "simulation_W1_M5_long_EURJPY_損切_ajust_ver1.19_送信.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_buy_dell_load_fxtf.py"),
+        ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_buy_dell_load_gaitame.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_buy_dell_load.py"),
     ]
 
