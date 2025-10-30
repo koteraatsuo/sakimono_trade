@@ -791,7 +791,7 @@ def run_simulation_for_ticker(args):
     lgb_model, xgb_model, cat_model, tabnet_model, ngb_model = models
 
     local_simulation_results = []
-    initial_investment = 2000000
+    initial_investment = 100000
     leverage = 5
     stop_loss_threshold = 0.3
 
