@@ -6,46 +6,41 @@ from datetime import datetime
 # --- 修正箇所 ---
 # 各要素を「ティッカー  # 銘柄名」という形式の一つの文字列に修正しました。
 futures_tickers = {
-    "メジャー通貨ペア": [
-        "EURUSD=X  # ユーロ/米ドル (EUR/USD-cd)",
-        "JPY=X      # 米ドル/日本円 (USD/JPY-cd)",
-        "GBPUSD=X  # 英ポンド/米ドル (GBP/USD-cd)",
-        "CHF=X      # 米ドル/スイスフラン (USD/CHF-cd)",
-        "AUDUSD=X  # 豪ドル/米ドル (AUD/USD-cd)",
-        "CAD=X      # 米ドル/カナダドル (USD/CAD-cd)",
-        "NZDUSD=X  # NZドル/米ドル (NZD/USD-cd)",
+    "商品CFD - 貴金属": [
+        "GC=F  # 金",
+        "SI=F  # 銀",
+        "PL=F  # プラチナ",
+        "PA=F  # パラジウム",
     ],
-    "クロス円": [
-        "EURJPY=X  # ユーロ/円 (EUR/JPY-cd)",
-        "GBPJPY=X  # 英ポンド/円 (GBP/JPY-cd)",
-        "AUDJPY=X  # 豪ドル/円 (AUD/JPY-cd)",
-        "NZDJPY=X  # NZドル/円 (NZD/JPY-cd)",
-        "CADJPY=X  # カナダドル/円 (CAD/JPY-cd)",
-        "CHFJPY=X  # スイスフラン/円 (CHF/JPY-cd)",
+    "商品CFD - 産業金属": [
+        "HG=F  # 銅",
     ],
-    "その他のクロス通貨": [
-        "EURGBP=X  # ユーロ/英ポンド (EUR/GBP-cd)",
-        "EURAUD=X  # ユーロ/豪ドル (EUR/AUD-cd)",
-        "EURNZD=X  # ユーロ/NZドル (EUR/NZD-cd)",
-        "EURCAD=X  # ユーロ/カナダドル (EUR/CAD-cd)",
-        "EURCHF=X  # ユーロ/スイスフラン (EUR/CHF-cd)",
-        "GBPAUD=X  # 英ポンド/豪ドル (GBP/AUD-cd)",
-        "GBPNZD=X  # 英ポンド/NZドル (GBP/NZD-cd)",
-        "GBPCAD=X  # 英ポンド/カナダドル (GBP/CAD-cd)",
-        "GBPCHF=X  # 英ポンド/スイスフラン (GBP/CHF-cd)",
-        "AUDNZD=X  # 豪ドル/NZドル (AUD/NZD-cd)",
-        "AUDCAD=X  # 豪ドル/カナダドル (AUD/CAD-cd)",
-        "AUDCHF=X  # 豪ドル/スイスフラン (AUD/CHF-cd)",
-        "NZDCAD=X  # NZドル/カナダドル (NZD/CAD-cd)",
-        "NZDCHF=X  # NZドル/スイスフラン (NZD/CHF-cd)",
+    "商品CFD - エネルギー": [
+        "CL=F  # WTI原油",
+        "BZ=F  # 北海原油",
+        "HO=F  # ヒーティングオイル",
+        "RB=F  # ガソリン",
+        "NG=F  # 天然ガス",
     ],
-    "エキゾチック通貨ペア": [
-        "ZARJPY=X  # 南アフリカランド/円 (ZAR/JPY-cd)",
-        "MXNJPY=X  # メキシコペソ/円 (MXN/JPY-cd)",
-        "TRYJPY=X  # トルコリラ/円 (TRY/JPY-cd)",
+    "商品CFD - 農産物 (穀物)": [
+        "ZS=F  # 大豆",
+        "ZC=F  # コーン",
+        "ZW=F  # 小麦",
+    ],
+    "商品CFD - 農産物 (ソフト)": [
+        "KC=F  # コーヒー",
+        "SB=F  # 粗糖",
+        "CC=F  # ココア",
+        "CT=F  # コットン",
+    ],
+    "商品CFD - 畜産": [
+        "LE=F  # 生牛",
+        "HE=F  # 豚肉",
+    ],
+    "バラエティCFD": [
+        "VX=F  # 米国VI (VIX指数先物)",
     ],
 }
-
 
 # --- ここからが実行コード ---
 
@@ -131,7 +126,7 @@ try:
         print(top_30_df[['ティッカー', '銘柄名', '上昇率 (%)', 'カテゴリ']])
         
         # 6. 結果をCSVファイルに保存
-        file_path = os.path.join(save_folder, "top_30_fx_fxtf_by_growth.csv")
+        file_path = os.path.join(save_folder, "top_30_cfd_by_growth.csv")
         top_30_to_save = top_30_df.copy()
         top_30_to_save['上昇率 (%)'] = top_30_to_save['上昇率 (%)'].round(2)
         top_30_to_save['開始価格'] = top_30_to_save['開始価格'].round(2)
@@ -738,47 +733,6 @@ def process_ticker_models(ticker, df_price_full, lookback_days, deal_term, train
         traceback.print_exc()
     return None, None
 
-# def run_simulation_for_ticker(args):
-#     ticker, df_price, lgb_model, xgb_model, cat_model, tabnet_model, ngb_model, scaler, lookback_days, deal_term = args
-#     local_simulation_results = []
-#     initial_investment, leverage, stop_loss_threshold = 2000000, 1, 0.3
-#     try:
-#         X_sim, _, _, indices_sim = create_combined_features(df_price, lookback_days=lookback_days, deal_term=deal_term)
-#         if len(X_sim) == 0: return []
-#         X_sim_scaled = scaler.transform(X_sim)
-#         pred_probs_lgb = lgb_model.predict_proba(X_sim_scaled)[:, 1]
-#         pred_probs_xgb = xgb_model.predict_proba(X_sim_scaled)[:, 1]
-#         pred_probs_cat = cat_model.predict_proba(X_sim_scaled)[:, 1]
-#         pred_probs_tabnet = tabnet_model.predict_proba(X_sim_scaled.astype(np.float32))[:, 1]
-#         pred_probs_ngb = ngb_model.predict_proba(X_sim_scaled)[:, 1]
-#         pred_probs = (pred_probs_lgb + pred_probs_xgb + pred_probs_cat + pred_probs_tabnet + pred_probs_ngb) / 5.0
-#         sim_count = max(1, int(len(X_sim) * 0.1))
-#         next_trade_available_idx = 0
-#         for sample_idx in range(len(X_sim) - sim_count, len(X_sim)):
-#             if sample_idx >= next_trade_available_idx:
-#                 start_idx = indices_sim[sample_idx]
-#                 end_idx = start_idx + deal_term
-#                 if end_idx >= len(df_price) or df_price['Open'].iloc[start_idx] == 0: continue
-#                 start_price = df_price['Open'].iloc[start_idx]
-#                 exit_price = df_price['Open'].iloc[end_idx]
-#                 stop_loss_price = start_price * (1 - stop_loss_threshold)
-#                 for i in range(start_idx, end_idx):
-#                     if df_price['Low'].iloc[i] <= stop_loss_price:
-#                         exit_price = stop_loss_price; break
-#                 number_of_shares = initial_investment // start_price
-#                 if number_of_shares == 0: continue
-#                 profit_loss = (exit_price - start_price) * number_of_shares * leverage
-#                 local_simulation_results.append({
-#                     "Ticker": ticker, "Company Name": get_company_name(ticker), "Simulation Date": df_price.index[start_idx].date(),
-#                     "Start Price": start_price, "Stop Loss Price": stop_loss_price, "End Price": df_price['Open'].iloc[end_idx],
-#                     "Exit Price": exit_price, "Price Difference": exit_price - start_price, "Profit/Loss (JPY)": round(profit_loss, 2),
-#                     "Predicted Probability": round(pred_probs[sample_idx], 3)
-#                 })
-#                 next_trade_available_idx = sample_idx + deal_term
-#         return local_simulation_results
-#     except Exception:
-#         print(f"シミュレーションエラー ({ticker}):"); traceback.print_exc(); return []
-
 
 
 def run_simulation_for_ticker(args):
@@ -791,7 +745,7 @@ def run_simulation_for_ticker(args):
     lgb_model, xgb_model, cat_model, tabnet_model, ngb_model = models
 
     local_simulation_results = []
-    initial_investment = 100000
+    initial_investment = 2000000
     leverage = 5
     stop_loss_threshold = 0.3
 
@@ -1224,7 +1178,7 @@ def main():
     total_cpus = multiprocessing.cpu_count()
 
     # ルール1: CPU使用率を75%に設定
-    CPU_USAGE_RATIO = 0.75
+    CPU_USAGE_RATIO = 0.5
     # ルール2: メモリ枯渇を防ぐための絶対的な上限値を設定
     ABSOLUTE_MAX_WORKERS = 32
 
@@ -1260,7 +1214,7 @@ def main():
         # ./分析 フォルダから対象となるファイルを探す
         candidate_files = [
             os.path.join(folder, f) for f in os.listdir(folder)
-            if (f == "top_30_fx_fxtf_by_growth.csv" or  # 元のCSVファイル
+            if (f == "top_30_cfd_by_growth.csv" or  # 元のCSVファイル
             (f.startswith("etf_top30_") and f.endswith(".xlsx"))) # 新しいExcelファイル
         ]
         
