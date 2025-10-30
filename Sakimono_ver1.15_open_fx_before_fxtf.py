@@ -1260,7 +1260,7 @@ def main():
         # ./分析 フォルダから対象となるファイルを探す
         candidate_files = [
             os.path.join(folder, f) for f in os.listdir(folder)
-            if (f == "top_30_fx_by_growth.csv" or  # 元のCSVファイル
+            if (f == "top_30_fx_fxtf_by_growth.csv" or  # 元のCSVファイル
             (f.startswith("etf_top30_") and f.endswith(".xlsx"))) # 新しいExcelファイル
         ]
         
