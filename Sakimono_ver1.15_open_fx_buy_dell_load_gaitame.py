@@ -1119,7 +1119,7 @@ def main():
     total_cpus = multiprocessing.cpu_count()
 
     # ルール1: CPU使用率を75%に設定
-    CPU_USAGE_RATIO = 0.75
+    CPU_USAGE_RATIO = 0.5
     # ルール2: メモリ枯渇を防ぐための絶対的な上限値を設定
     ABSOLUTE_MAX_WORKERS = 32
 
@@ -1155,7 +1155,7 @@ def main():
         # ./分析 フォルダから対象となるファイルを探す
         candidate_files = [
             os.path.join(folder, f) for f in os.listdir(folder)
-            if (f == "top_30_fx_by_growth.csv" or  # 元のCSVファイル
+            if (f == "top_30_fx_gaitame_by_growth.csv" or  # 元のCSVファイル
             (f.startswith("etf_top30_") and f.endswith(".xlsx"))) # 新しいExcelファイル
         ]
         
@@ -1781,7 +1781,7 @@ def main():
             msg = MIMEMultipart("related")
             msg["From"] = GMAIL_USER
             msg["To"] = recipient
-            msg["Subject"] = f"FXv3 アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
+            msg["Subject"] = f"FXv3 (外為ファイネスト) アンサブル5 1DAY TOP40 アンサンブル推奨 ({current_date}) {int(current_portfolio)}円 {raito:.2f}倍"
 
             # HTML本文を作成
             body_html = f"""
