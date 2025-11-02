@@ -65,8 +65,8 @@ def exe_japanese_before_scripts():
     scripts_list = [
         
         ("C:/workspace/nihon_kabu_trade/ess", "nihon_ver1.12_open_v5_before_sim_ansemble5_bigcompany_top40_1day_ESS.py"),
-        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v6_before_sim_ansemble5_bigcompany_top40_1day_paralel_v2.py"),
-        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v6_before_sim_ansemble5_bigcompany_top40_1day_v3.py"),
+        # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v6_before_sim_ansemble5_bigcompany_top40_1day_paralel_v2.py"),
+        # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v6_before_sim_ansemble5_bigcompany_top40_1day_v3.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_commodity_before.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_kasoutuka_before.py"),     
         ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
@@ -324,8 +324,8 @@ def exe_refresh_scripts():
     scripts_list = [
         ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
         ("C:/workspace/cfd_trade", "nihon_refresh_listpy"),
-        ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
-        ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
+        # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
+        # ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
         ("C:/workspace/cfd_trade", "sp500_csv.py"),    
     ]
 
