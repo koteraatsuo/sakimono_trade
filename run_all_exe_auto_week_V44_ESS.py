@@ -457,7 +457,6 @@ def schedule_job(script_type):
 # schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 
 schedule.every().day.at("01:00").do(lambda: schedule_job("japanese_before"))
-schedule.every().day.at("07:00").do(lambda: schedule_job("fx"))
 schedule.every().day.at("08:50").do(lambda: schedule_job("japanese"))
 schedule.every().day.at("08:00").do(lambda: schedule_job("metal"))
 schedule.every().day.at("08:01").do(lambda: schedule_job("sakimono"))
