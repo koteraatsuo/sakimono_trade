@@ -324,6 +324,7 @@ def exe_refresh_scripts():
     conda_env = "py310_fx"
     scripts_list = [
         ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
+        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_refresh_list.py"),
         ("C:/workspace/cfd_trade", "nihon_refresh_listpy"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
         # ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
