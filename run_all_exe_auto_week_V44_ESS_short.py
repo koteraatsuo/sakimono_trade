@@ -8,8 +8,8 @@ def exe_japanese_stocks():
     # 日本株スクリプトのみ実行
     conda_env = "py310_fx"
     scripts_list = [
-        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_ver1.12_open_v6_load_sim_ansemble5_bigcompany_top40_1day_paralel_v2_ESS_short.py"), 
-        ("C:/workspace/nihon_kabu_trade/ess", "nihon_ver1.12_open_v6_load_sim_ansemble5_bigcompany_top40_1day_paralel_v2_ESS.py"),        
+        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_ver1.12_open_v6_load_sim_ansemble5_bigcompany_top40_1day_paralel_v2_ESS_short_v2.py"), 
+        ("C:/workspace/nihon_kabu_trade/ess", "nihon_ver1.12_open_v6_load_sim_ansemble5_bigcompany_top40_1day_paralel_v2_ESS_v2.py"),        
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40_1day_v3.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40_1day.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v5_load_sim_ansemble5_bigcompany_top40_2day.py"),
@@ -65,8 +65,8 @@ def exe_japanese_before_scripts():
     conda_env = "py310_fx"
     scripts_list = [
         
-        ("C:/workspace/nihon_kabu_trade/ess", "nihon_ver1.12_open_v5_before_sim_ansemble5_bigcompany_top40_1day_ESS_v2.py"),
-        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_ver1.12_open_v5_before_sim_ansemble5_bigcompany_top40_1day_ESS_v2.py"),
+        ("C:/workspace/nihon_kabu_trade/ess", "nihon_ver1.12_open_v5_before_sim_ansemble5_bigcompany_top40_1day_ESS.py"),
+        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_ver1.12_open_v5_before_sim_ansemble5_bigcompany_top40_1day_ESS.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v6_before_sim_ansemble5_bigcompany_top40_1day_v3.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_commodity_before.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_kasoutuka_before.py"),     
