@@ -66,11 +66,12 @@ def exe_japanese_before_scripts():
     scripts_list = [
         
         ("C:/workspace/nihon_kabu_trade/ess", "nihon_ver1.12_open_v5_before_sim_ansemble5_bigcompany_top40_1day_ESS.py"),
-        # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v6_before_sim_ansemble5_bigcompany_top40_1day_paralel_v2.py"),
+        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_ver1.12_open_v5_before_sim_ansemble5_bigcompany_top40_1day_ESS.py"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v6_before_sim_ansemble5_bigcompany_top40_1day_v3.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_commodity_before.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_kasoutuka_before.py"),     
-        ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
+        ("C:/workspace/nihon_kabu_trade/ess", "nihon_refresh_list_V2.py"),
+        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_refresh_list_down_V2.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_before.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_before_gaitame.py"),
         ("C:/workspace/sakimono_trade", "Sakimono_ver1.15_open_fx_before_fxtf.py"),
@@ -323,7 +324,8 @@ def exe_refresh_scripts():
     # 日本株以外のスクリプトを実行
     conda_env = "py310_fx"
     scripts_list = [
-        ("C:/workspace/nihon_kabu_trade", "nihon_refresh_list.py"),
+        ("C:/workspace/nihon_kabu_trade/ess", "nihon_refresh_list_V2.py"),
+        ("C:/workspace/nihon_kabu_trade/ESSSHORT", "nihon_refresh_list_down_V2.py"),
         ("C:/workspace/cfd_trade", "nihon_refresh_listpy"),
         # ("C:/workspace/nihon_kabu_trade", "nihon_ver1.12_open_v4_before_train_4000.py"),
         # ("C:/workspace/cfd_trade", "america_ver1.12_open_v4_before_train_4000.py"),
